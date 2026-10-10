@@ -9,5 +9,5 @@ pluginManagement {
   }
 }
 
-include(":app")
+include(":game")
 include(":webgpu-native")
