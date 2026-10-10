@@ -40,3 +40,26 @@ jobs:
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew allTests
+
+  healthcheck:
+    name: healthcheck (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            launcher: ./app/build/jpackage/image/kt-gff2027-2d/bin/HealthCheck
+          - os: macos-latest
+            launcher: ./app/build/jpackage/image/kt-gff2027-2d.app/Contents/MacOS/HealthCheck
+          - os: windows-latest
+            launcher: ./app/build/jpackage/image/kt-gff2027-2d/HealthCheck.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+      - run: ./gradlew :app:jpackage -Phealthcheck
+      - run: ${{ matrix.launcher }}
