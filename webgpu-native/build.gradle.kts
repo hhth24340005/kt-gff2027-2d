@@ -1,4 +1,5 @@
 import java.security.MessageDigest
+import javax.inject.Inject
 
 plugins {
   id("convention.kotlin-multiplatform")
@@ -102,44 +103,133 @@ dependencies {
   )
 }
 
-tasks.register<Sync>("installJextract") {
-  description =
-    "Downloads jextract for the current platform into build/jextract."
-  from(tarTree(jextract.elements.map { it.single().asFile }))
-  into(layout.buildDirectory.dir("jextract"))
-  eachFile {
-    // Some files in the archive are read-only, which breaks re-extraction
-    val mode = permissions.toUnixNumeric() or 0b010_000_000
-    permissions { unix(mode) }
-    relativePath =
-      RelativePath(
-        true,
-        *relativePath.segments
-          .drop(1)
-          .toTypedArray(),
-      )
+val installJextract =
+  tasks.register<Sync>("installJextract") {
+    description =
+      "Downloads jextract for the current platform into build/jextract."
+    from(tarTree(jextract.elements.map { it.single().asFile }))
+    into(layout.buildDirectory.dir("jextract"))
+    eachFile {
+      // Some files in the archive are read-only, which breaks re-extraction
+      val mode = permissions.toUnixNumeric() or 0b010_000_000
+      permissions { unix(mode) }
+      relativePath =
+        RelativePath(
+          true,
+          *relativePath.segments
+            .drop(1)
+            .toTypedArray(),
+        )
+    }
+    includeEmptyDirs = false
   }
-  includeEmptyDirs = false
+
+val extractWgpuNative =
+  tasks.register<Sync>("extractWgpuNative") {
+    description = "Downloads wgpu-native for the current platform."
+    val archive = wgpuNative.elements.map { it.single().asFile }
+    val platform = wgpuNativePlatformOf()
+    val expected =
+      checkNotNull(wgpuNativeSha256[platform]) {
+        "No SHA-256 for wgpu-native on $platform"
+      }
+    from(zipTree(archive))
+    into(layout.buildDirectory.dir("wgpu-native"))
+    doFirst {
+      val actual =
+        MessageDigest
+          .getInstance("SHA-256")
+          .digest(archive.get().readBytes())
+          .toHexString()
+      check(actual == expected) {
+        "SHA-256 mismatch for ${archive.get().name}: $actual"
+      }
+    }
+  }
+
+abstract class Jextract : DefaultTask() {
+  @get:Inject
+  abstract val exec: ExecOperations
+
+  @get:Inject
+  abstract val fs: FileSystemOperations
+
+  @get:InputDirectory
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val jextractHome: DirectoryProperty
+
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val header: RegularFileProperty
+
+  @get:Input
+  abstract val targetPackage: Property<String>
+
+  @get:Input
+  abstract val library: Property<String>
+
+  @get:OutputDirectory
+  abstract val outputDirectory: DirectoryProperty
+
+  @TaskAction
+  fun generate() {
+    val windows = "windows" in System.getProperty("os.name").lowercase()
+    val executable =
+      jextractHome
+        .file(if (windows) "bin/jextract.bat" else "bin/jextract")
+        .get()
+        .asFile
+    val headerFile = header.get().asFile
+
+    // Keep only declarations from the header itself, not system headers
+    val dump = temporaryDir.resolve("dump-includes.txt")
+    exec.exec {
+      commandLine(executable, "--dump-includes", dump, headerFile)
+    }
+    val includes = temporaryDir.resolve("includes.txt")
+    includes.writeText(
+      dump
+        .readLines()
+        .filter {
+          File(it.substringAfter("# header: ", "")).name == headerFile.name
+        }.joinToString("\n"),
+    )
+
+    fs.delete { delete(outputDirectory) }
+    exec.exec {
+      commandLine(
+        executable,
+        "@$includes",
+        "--output",
+        outputDirectory.get().asFile,
+        "--target-package",
+        targetPackage.get(),
+        "--library",
+        library.get(),
+        "--use-system-load-library",
+        headerFile,
+      )
+    }
+  }
 }
 
-tasks.register<Sync>("extractWgpuNative") {
-  description = "Downloads wgpu-native for the current platform."
-  val archive = wgpuNative.elements.map { it.single().asFile }
-  val platform = wgpuNativePlatformOf()
-  val expected =
-    checkNotNull(wgpuNativeSha256[platform]) {
-      "No SHA-256 for wgpu-native on $platform"
-    }
-  from(zipTree(archive))
-  into(layout.buildDirectory.dir("wgpu-native"))
-  doFirst {
-    val actual =
-      MessageDigest
-        .getInstance("SHA-256")
-        .digest(archive.get().readBytes())
-        .toHexString()
-    check(actual == expected) {
-      "SHA-256 mismatch for ${archive.get().name}: $actual"
-    }
+val generateWebgpuBindings =
+  tasks.register<Jextract>("generateWebgpuBindings") {
+    description = "Generates Java bindings for webgpu.h with jextract."
+    jextractHome.set(layout.dir(installJextract.map { it.destinationDir }))
+    header.set(
+      layout.file(
+        extractWgpuNative.map {
+          it.destinationDir.resolve("include/webgpu/webgpu.h")
+        },
+      ),
+    )
+    targetPackage = "wgpu_native"
+    library = "wgpu_native"
+    outputDirectory = layout.buildDirectory.dir("generated/jextract")
   }
+
+sourceSets.jvmMain {
+  java.srcDir(generateWebgpuBindings)
 }
+
