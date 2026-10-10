@@ -10,3 +10,4 @@ pluginManagement {
 }
 
 include(":app")
+include(":webgpu-native")
