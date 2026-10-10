@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

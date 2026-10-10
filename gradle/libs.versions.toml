@@ -1,0 +1,34 @@
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "+" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "+" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version = "+" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "+" }
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version = "+" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version = "+" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version = "+" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "+" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "+" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version = "+" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version = "+" }
+kotest-property = { module = "io.kotest:kotest-property", version = "+" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version = "+" }
+ktlint-cli = { module = "io.github.ktlint.core:ktlint-cli", version = "+" }
+
+[bundles]
+arrow = [
+  "arrow-core",
+  "arrow-fx-coroutines",
+]
+kotest = [
+  "kotest-framework-engine",
+  "kotest-assertions-core",
+  "kotest-property",
+]
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version = "+" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "+" }
+kotlinx-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version = "+" }
+ksp = { id = "com.google.devtools.ksp", version = "+" }
+kotest = { id = "io.kotest", version = "+" }
+detekt = { id = "dev.detekt", version = "+" }
