@@ -133,7 +133,9 @@ val extractWgpuNative =
       checkNotNull(wgpuNativeSha256[platform]) {
         "No SHA-256 for wgpu-native on $platform"
       }
-    from(zipTree(archive))
+    from(zipTree(archive)) {
+      include("include/**", "lib/*.dylib", "lib/*.so", "lib/*.dll")
+    }
     into(layout.buildDirectory.dir("wgpu-native"))
     doFirst {
       val actual =
@@ -233,3 +235,12 @@ sourceSets.jvmMain {
   java.srcDir(generateWebgpuBindings)
 }
 
+
+configurations.consumable("nativeLibraries")
+
+artifacts.add(
+  "nativeLibraries",
+  extractWgpuNative.map { it.destinationDir.resolve("lib") },
+) {
+  builtBy(extractWgpuNative)
+}

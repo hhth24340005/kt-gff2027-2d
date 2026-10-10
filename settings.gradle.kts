@@ -10,4 +10,5 @@ pluginManagement {
 }
 
 include(":game")
+include(":healthcheck")
 include(":webgpu-native")
