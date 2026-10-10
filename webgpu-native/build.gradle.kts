@@ -8,6 +8,19 @@ repositories {
   exclusiveContent {
     forRepository {
       ivy {
+        name = "jextract"
+        url = uri("https://download.java.net/java/early_access/jextract/")
+        patternLayout {
+          artifact("[module]/openjdk-[revision]_[classifier]_bin.[ext]")
+        }
+        metadataSources { artifact() }
+      }
+    }
+    filter { includeGroup("net.java.jextract") }
+  }
+  exclusiveContent {
+    forRepository {
+      ivy {
         name = "wgpu-native"
         url = uri("https://github.com/gfx-rs/wgpu-native/releases/download/")
         patternLayout {
@@ -18,6 +31,27 @@ repositories {
     }
     filter { includeGroup("io.github.gfx-rs") }
   }
+}
+
+val jextract: Configuration = configurations.create("jextract")
+
+fun jextractPlatformOf(): String {
+  val os = System.getProperty("os.name").lowercase()
+  val osPart =
+    when {
+      "mac" in os -> "macos"
+      "windows" in os -> "windows"
+      "linux" in os -> "linux"
+      else -> error("jextract does not support OS: $os")
+    }
+  val arch = System.getProperty("os.arch")
+  val archPart =
+    when (arch) {
+      "aarch64", "arm64" -> "aarch64"
+      "x86_64", "amd64" -> "x64"
+      else -> error("jextract does not support architecture: $arch")
+    }
+  return "$osPart-$archPart"
 }
 
 val wgpuNative: Configuration = configurations.create("wgpuNative")
@@ -54,12 +88,38 @@ val wgpuNativeSha256: Map<String, String> =
   )
 
 dependencies {
+  jextract(
+    variantOf(libs.jextract) {
+      classifier(jextractPlatformOf())
+      artifactType("tar.gz")
+    },
+  )
   wgpuNative(
     variantOf(libs.wgpu.native) {
       classifier(wgpuNativePlatformOf())
       artifactType("zip")
     },
   )
+}
+
+tasks.register<Sync>("installJextract") {
+  description =
+    "Downloads jextract for the current platform into build/jextract."
+  from(tarTree(jextract.elements.map { it.single().asFile }))
+  into(layout.buildDirectory.dir("jextract"))
+  eachFile {
+    // Some files in the archive are read-only, which breaks re-extraction
+    val mode = permissions.toUnixNumeric() or 0b010_000_000
+    permissions { unix(mode) }
+    relativePath =
+      RelativePath(
+        true,
+        *relativePath.segments
+          .drop(1)
+          .toTypedArray(),
+      )
+  }
+  includeEmptyDirs = false
 }
 
 tasks.register<Sync>("extractWgpuNative") {
