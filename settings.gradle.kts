@@ -12,4 +12,4 @@ pluginManagement {
 include(":app")
 include(":game")
 include(":healthcheck")
-include(":webgpu-native")
+include(":native:webgpu")

@@ -5,6 +5,9 @@ plugins {
   id("convention.kotlin-multiplatform")
 }
 
+group = "native"
+base.archivesName = "native-webgpu"
+
 repositories {
   exclusiveContent {
     forRepository {

@@ -26,7 +26,7 @@ kotlin {
 }
 
 dependencies {
-  nativeLibraries(project(":webgpu-native", "nativeLibraries"))
+  nativeLibraries(project(":native:webgpu", "nativeLibraries"))
 }
 
 abstract class Jpackage : DefaultTask() {

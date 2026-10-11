@@ -20,14 +20,14 @@ kotlin {
   sourceSets {
     jvmMain {
       dependencies {
-        implementation(project(":webgpu-native"))
+        implementation(project(":native:webgpu"))
       }
     }
   }
 }
 
 dependencies {
-  nativeLibraries(project(":webgpu-native", "nativeLibraries"))
+  nativeLibraries(project(":native:webgpu", "nativeLibraries"))
 }
 
 tasks.withType<JavaExec>().configureEach {
