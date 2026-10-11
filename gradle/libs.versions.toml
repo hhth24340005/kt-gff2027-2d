@@ -15,6 +15,8 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version = "+
 ktlint-cli = { module = "io.github.ktlint.core:ktlint-cli", version = "+" }
 jextract = { module = "net.java.jextract:25/2", version = "25-jextract+2-4" }
 wgpu-native = { module = "io.github.gfx-rs:wgpu-native", version = "v29.0.1.1" }
+lwjgl = { module = "org.lwjgl:lwjgl", version = "+" }
+lwjgl-sdl = { module = "org.lwjgl:lwjgl-sdl", version = "+" }
 
 [bundles]
 arrow = [
