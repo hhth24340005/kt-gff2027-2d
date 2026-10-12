@@ -4,3 +4,19 @@ reviews:
   path_instructions:
     - path: "**/*.{kt,kts}"
       instructions: "Follow the guidelines in .claude/guidelines/kotlin.md."
+  pre_merge_checks:
+    custom_checks:
+      - name: "Public API KDoc"
+        mode: "warning"
+        instructions: |
+          List every public declaration added or changed in this PR.
+          Treat a declaration with no visibility modifier as public.
+          Fail if any of them has no KDoc and you can show something a caller
+          needs beyond its name and types. Otherwise treat it as self-explanatory.
+          An ordinary comment is not KDoc.
+          Pass if none fails, or if no public declaration changed.
+          Ignore internal, private and @PublishedApi internal declarations,
+          members of internal or private containers and local declarations.
+          Ignore *.gradle.kts files and source sets that contain a main function
+          in any of their files, such as game, healthcheck
+          and wrapper/window/src/jvmIntegrationTest.
