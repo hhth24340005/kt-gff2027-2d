@@ -48,6 +48,7 @@ import org.lwjgl.sdl.SDL_Event
 import org.lwjgl.system.JNI
 import org.lwjgl.system.Platform
 import org.lwjgl.system.macosx.LibSystem
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -56,6 +57,8 @@ public sealed class Window(
   @PublishedApi internal val sdlWindow: Long,
   @PublishedApi internal val mainDispatcher: CoroutineDispatcher,
 ) {
+  @PublishedApi internal val used: AtomicBoolean = AtomicBoolean(false)
+
   companion {
     /**
      * Creates a window for the active SDL video driver. Release it with [use].
@@ -110,6 +113,7 @@ public sealed class Window(
    * @throws IllegalArgumentException if the interval is non-positive, the
    * window has no valid SDL ID, or event polling runs off SDL's main thread.
    * Polling failures are reported through the caller's coroutine scope.
+   * @throws IllegalStateException if the window is already used.
    */
   public suspend inline fun <R> use(
     closeRequests: CloseRequests,
@@ -158,8 +162,9 @@ public sealed class Window(
     closeRequests: CloseRequests,
     pollingInterval: Duration,
     block: (Window) -> R,
-  ): R =
-    try {
+  ): R {
+    check(used.compareAndSet(false, true)) { "Window is already used" }
+    return try {
       SdlEvents.usePoller(
         this@Window,
         closeRequests,
@@ -176,6 +181,7 @@ public sealed class Window(
         SDL_QuitSubSystem(SDL_INIT_VIDEO)
       }
     }
+  }
 
   // endregion
 }
