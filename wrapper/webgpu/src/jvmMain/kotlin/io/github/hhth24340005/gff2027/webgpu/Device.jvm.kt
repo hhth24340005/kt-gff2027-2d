@@ -11,6 +11,7 @@ import wgpu_native.WGPUShaderSourceWGSL
 import wgpu_native.WGPUVertexState
 import wgpu_native.webgpu_h.WGPUPrimitiveTopology_TriangleList
 import wgpu_native.webgpu_h.WGPUSType_ShaderSourceWGSL
+import wgpu_native.webgpu_h.wgpuDeviceCreateCommandEncoder
 import wgpu_native.webgpu_h.wgpuDeviceCreateRenderPipeline
 import wgpu_native.webgpu_h.wgpuDeviceCreateShaderModule
 import wgpu_native.webgpu_h.wgpuDeviceGetQueue
@@ -18,6 +19,7 @@ import wgpu_native.webgpu_h.wgpuDeviceRelease
 import wgpu_native.webgpu_h.wgpuQueueRelease
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
+import java.lang.foreign.MemorySegment.NULL
 
 public actual class Device internal constructor(
   internal val handle: MemorySegment,
@@ -53,6 +55,9 @@ internal actual fun Device.createRenderPipelineImpl(
       ),
     )
   }
+
+internal actual fun Device.createCommandEncoderImpl(): CommandEncoder =
+  CommandEncoder(wgpuDeviceCreateCommandEncoder(handle, NULL))
 
 internal actual fun Device.release() {
   wgpuQueueRelease(queue.handle)

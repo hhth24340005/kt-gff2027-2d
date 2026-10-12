@@ -41,6 +41,17 @@ public suspend fun Device.createRenderPipeline(
     release = { pipeline, _ -> pipeline.release() },
   )
 
+/**
+ * Creates an encoder that records GPU commands. The scope releases it when
+ * it exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createCommandEncoder(): CommandEncoder =
+  scope.install(
+    acquire = { createCommandEncoderImpl() },
+    release = { encoder, _ -> encoder.release() },
+  )
+
 // region internal
 
 internal expect fun Device.createShaderModuleImpl(
@@ -53,6 +64,8 @@ internal expect fun Device.createRenderPipelineImpl(
   fragment: FragmentState,
   label: String?,
 ): RenderPipeline
+
+internal expect fun Device.createCommandEncoderImpl(): CommandEncoder
 
 internal expect fun Device.release()
 
