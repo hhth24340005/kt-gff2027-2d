@@ -30,10 +30,19 @@ jobs:
       - run: ./gradlew detekt
 
   test:
-    name: test
-    runs-on: ubuntu-latest
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            # No display on the Linux runner
+            sdl-video-driver: offscreen
+          - os: macos-latest
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
     env:
-      SDL_VIDEO_DRIVER: offscreen
+      SDL_VIDEO_DRIVER: ${{ matrix.sdl-video-driver }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
