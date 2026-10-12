@@ -57,6 +57,18 @@ public sealed class Window(
   @PublishedApi internal val mainDispatcher: CoroutineDispatcher,
 ) {
   companion {
+    /**
+     * Creates a window for the active SDL video driver. Release it with [use].
+     *
+     * @param size width to height in SDL screen coordinates, each in 1..16384.
+     * @param mainDispatcher dispatcher confined to SDL's main thread, which
+     * must also be the process main thread on macOS. It is retained for event
+     * polling and cleanup.
+     * @throws IllegalArgumentException if either size is out of range or
+     * creation runs on the wrong thread.
+     * @throws IllegalStateException if SDL video initialization, window
+     * creation, or Metal view creation fails, or the driver is unsupported.
+     */
     public suspend fun create(
       @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
       title: String,
@@ -65,6 +77,16 @@ public sealed class Window(
     ): Window =
       createSdlWindow(title, size, mainDispatcher)
 
+    /**
+     * Creates a window using the caller's dispatcher for creation, polling,
+     * and cleanup. The size limits, thread requirements, and creation errors
+     * are the same as for [create]. Release the window with [use].
+     *
+     * @throws IllegalStateException if the current context has no coroutine
+     * dispatcher, or a creation failure described by [create] occurs.
+     * @throws IllegalArgumentException if either size is out of range or
+     * creation runs on the wrong thread.
+     */
     public suspend fun createOnCurrentDispatcher(
       @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
       title: String,
@@ -73,6 +95,22 @@ public sealed class Window(
       createSdlWindow(title, size, currentDispatcher())
   }
 
+  /**
+   * Runs [block] in the caller's context and returns its result while polling
+   * SDL events on this window's dispatcher. Destroys the window and releases
+   * its SDL video reference on exit, including failure or cancellation.
+   * Use each window once; its native handles are invalid afterward.
+   * Exceptions from [block] propagate after cleanup.
+   *
+   * @param closeRequests receives this window's close requests and global
+   * quit requests, conflated to at most one pending notification. Requests
+   * do not end [block] automatically. The channel is left open on exit.
+   * @param pollingInterval positive delay between polls when no event is
+   * available; defaults to approximately 1/60 second.
+   * @throws IllegalArgumentException if the interval is non-positive, the
+   * window has no valid SDL ID, or event polling runs off SDL's main thread.
+   * Polling failures are reported through the caller's coroutine scope.
+   */
   public suspend inline fun <R> use(
     closeRequests: CloseRequests,
     pollingInterval: Duration = 1.seconds / 60,
