@@ -215,6 +215,10 @@ internal object SdlEvents {
     event: SDL_Event,
   ) {
     while (true) {
+      // The dispatcher may resume us on another thread after `delay`
+      require(SDL_IsMainThread()) {
+        "Polling dispatcher must be on the main thread"
+      }
       if (SDL_PollEvent(event)) {
         return
       }

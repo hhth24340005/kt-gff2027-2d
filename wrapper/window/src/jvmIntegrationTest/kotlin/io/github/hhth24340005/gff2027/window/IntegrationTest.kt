@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -46,6 +47,7 @@ fun main() {
       "cancelled caller cleans up" to ::cleansUpOnCancel,
       "already cancelled caller skips block" to ::skipsBlockWhenCancelled,
       "use from a non-main caller" to ::usesFromNonMainCaller,
+      "unconfined dispatcher is rejected" to ::rejectsUnconfined,
     )
   for ([name, scenario] in scenarios) {
     runBlocking { withTimeout(20.seconds) { scenario(this) } }
@@ -230,6 +232,24 @@ private suspend fun usesFromNonMainCaller(
       pushClose(window)
       check(requests.got()) { "request lost when called off main" }
     }
+  }
+}
+
+private suspend fun rejectsUnconfined(
+  @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,
+) {
+  val window =
+    Window.create(
+      title = "unconfined",
+      size = 160 to 120,
+      mainDispatcher = Dispatchers.Unconfined,
+    )
+  val result =
+    runCatching {
+      coroutineScope { window.use(CloseRequests()) { delay(1.seconds) } }
+    }
+  check(result.exceptionOrNull() is IllegalArgumentException) {
+    "polling off the main thread was not rejected: $result"
   }
 }
 
