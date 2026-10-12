@@ -1,2 +1,5 @@
 reviews:
   request_changes_workflow: true
+  path_instructions:
+    - path: "**/*.{kt,kts}"
+      instructions: "Follow the guidelines in .claude/guidelines/kotlin.md."
