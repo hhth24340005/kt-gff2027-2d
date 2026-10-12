@@ -71,7 +71,7 @@ public sealed class Window(
   }
 
   public suspend inline fun <R> use(
-    closeRequests: SendChannel<Unit>,
+    closeRequests: CloseRequests,
     pollingInterval: Duration = 1.seconds / 60,
     block: (Window) -> R,
   ): R =
@@ -114,7 +114,7 @@ public sealed class Window(
 
   @PublishedApi
   internal suspend inline fun <R> useImpl(
-    closeRequests: SendChannel<Unit>,
+    closeRequests: CloseRequests,
     pollingInterval: Duration,
     block: (Window) -> R,
   ): R =
@@ -148,7 +148,7 @@ internal object SdlEvents {
 
   suspend inline fun <R> usePoller(
     window: Window,
-    closeRequest: SendChannel<Unit>,
+    closeRequest: CloseRequests,
     pollingInterval: Duration,
     block: () -> R,
   ): R {
@@ -165,7 +165,7 @@ internal object SdlEvents {
           "SDL_GetWindowID failed for window " +
             "0x${window.sdlWindow.toHexString()}: ${SDL_GetError()}"
         }
-        closeRequests += windowId to closeRequest
+        closeRequests += windowId to closeRequest.channel
         windowId
       }
     val pollJob =
