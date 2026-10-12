@@ -20,6 +20,7 @@ import org.lwjgl.sdl.SDLInit.SDL_INIT_VIDEO
 import org.lwjgl.sdl.SDLInit.SDL_WasInit
 import org.lwjgl.sdl.SDLVideo.SDL_GetWindowID
 import org.lwjgl.sdl.SDL_Event
+import org.lwjgl.system.Platform
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -27,8 +28,14 @@ import kotlin.time.Duration.Companion.seconds
 // Scenarios found by an adversarial agent. Each one must leave SDL video
 // uninitialized and no window registered for events.
 fun main() {
+  // Must come first, as SDL takes the first thread to initialize it as the
+  // main thread. Only Cocoa needs the actual main thread
+  val firstCreateOffMain =
+    ("first create off the main thread is rejected" to ::rejectsFirstOffMain)
+      .takeIf { Platform.get() == Platform.MACOSX }
   val scenarios =
-    listOf(
+    listOfNotNull(
+      firstCreateOffMain,
       "requests are routed to the right window" to ::routesToTheRightWindow,
       "request for a finished window is ignored" to ::ignoresFinishedWindow,
       "quit reaches every window" to ::quitReachesEveryWindow,
@@ -51,6 +58,23 @@ fun main() {
 }
 
 // region internal
+
+private suspend fun rejectsFirstOffMain(
+  @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,
+) {
+  val result =
+    runCatching {
+      Window.create(
+        title = "off main",
+        size = 160 to 120,
+        mainDispatcher = Dispatchers.Default,
+      )
+    }
+  check(result.exceptionOrNull() is IllegalArgumentException) {
+    "first create off the main thread was not rejected: $result"
+  }
+  newWindow("on main").use(CloseRequests()) {}
+}
 
 private suspend fun routesToTheRightWindow(
   @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,

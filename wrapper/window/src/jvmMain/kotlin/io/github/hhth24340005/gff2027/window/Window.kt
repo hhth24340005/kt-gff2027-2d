@@ -45,6 +45,9 @@ import org.lwjgl.sdl.SDLVideo.SDL_PROP_WINDOW_X11_DISPLAY_POINTER
 import org.lwjgl.sdl.SDLVideo.SDL_PROP_WINDOW_X11_WINDOW_NUMBER
 import org.lwjgl.sdl.SDLVideo.SDL_WINDOW_METAL
 import org.lwjgl.sdl.SDL_Event
+import org.lwjgl.system.JNI
+import org.lwjgl.system.Platform
+import org.lwjgl.system.macosx.LibSystem
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -238,7 +241,7 @@ private suspend fun createSdlWindow(
     "Size must be within 1..$MAX_WINDOW_SIDE, but got: $size"
   }
   return withContext(mainDispatcher) {
-    require(SDL_IsMainThread()) {
+    require(isMainThread()) {
       "Window must be created on the main thread"
     }
     check(SDL_InitSubSystem(SDL_INIT_VIDEO)) {
@@ -252,6 +255,15 @@ private suspend fun createSdlWindow(
     }
   }
 }
+
+// SDL takes the first thread to initialize it as the main thread,
+// but Cocoa needs the actual one
+private fun isMainThread(): Boolean =
+  SDL_IsMainThread() &&
+    (Platform.get() != Platform.MACOSX || pthreadMainNp() != 0)
+
+private fun pthreadMainNp(): Int =
+  JNI.invokeI(LibSystem.getLibrary().getFunctionAddress("pthread_main_np"))
 
 private fun openSdlWindow(
   title: String,
