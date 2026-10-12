@@ -53,7 +53,7 @@ dependencies {
 val jvmIntegrationTest =
   tasks.register<JavaExec>("jvmIntegrationTest") {
     mustRunAfter(tasks.named("jvmTest"))
-    description = "Opens a window and checks that it closes on request."
+    description = "Runs window scenarios against event dispatch and cleanup."
     group = "verification"
     val compilation =
       kotlin
