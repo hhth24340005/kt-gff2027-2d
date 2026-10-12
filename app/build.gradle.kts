@@ -106,6 +106,10 @@ tasks.register<Jpackage>("jpackage") {
     "--enable-native-access=ALL-UNNAMED",
     "-Djava.library.path=\$APPDIR",
   )
+  // SDL needs the main thread on macOS
+  if ("mac" in System.getProperty("os.name").lowercase()) {
+    javaOptions.add("-XstartOnFirstThread")
+  }
   if (healthCheck) {
     healthCheckMainClass = "healthcheck.MainKt"
   }
