@@ -32,6 +32,8 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
+    env:
+      SDL_VIDEO_DRIVER: offscreen
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6

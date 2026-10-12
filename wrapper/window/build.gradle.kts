@@ -23,6 +23,13 @@ fun lwjglNativesOf(): String {
 }
 
 kotlin {
+  jvm {
+    val main by compilations.getting
+    compilations.create("integrationTest") {
+      associateWith(main)
+    }
+  }
+
   sourceSets {
     jvmMain {
       dependencies {
@@ -41,4 +48,27 @@ dependencies {
   jvmMainRuntimeOnly(
     variantOf(libs.lwjgl.sdl) { classifier(lwjglNativesOf()) },
   )
+}
+
+val jvmIntegrationTest =
+  tasks.register<JavaExec>("jvmIntegrationTest") {
+    mustRunAfter(tasks.named("jvmTest"))
+    description = "Opens a window and checks that it closes on request."
+    group = "verification"
+    val compilation =
+      kotlin
+        .jvm()
+        .compilations
+        .getByName("integrationTest")
+    classpath =
+      compilation.output.allOutputs + compilation.runtimeDependencyFiles
+    mainClass = "io.github.hhth24340005.gff2027.window.IntegrationTestKt"
+    // SDL needs the main thread on macOS
+    if ("mac" in System.getProperty("os.name").lowercase()) {
+      jvmArgs("-XstartOnFirstThread")
+    }
+  }
+
+tasks.named("allTests") {
+  dependsOn(jvmIntegrationTest)
 }
