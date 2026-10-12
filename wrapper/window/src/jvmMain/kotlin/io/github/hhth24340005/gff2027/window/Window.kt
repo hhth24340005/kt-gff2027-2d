@@ -3,6 +3,7 @@ package io.github.hhth24340005.gff2027.window
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -229,8 +230,8 @@ internal object SdlEvents {
     return try {
       block()
     } finally {
-      pollJob.cancel()
       withContext(window.mainDispatcher + NonCancellable) {
+        pollJob.cancelAndJoin()
         closeRequests -= windowId
       }
     }
