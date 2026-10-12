@@ -10,6 +10,7 @@ kotlin {
     "-Xcollection-literals",
     "-Xname-based-destructuring=complete",
     "-Xcompanion-blocks-and-extensions",
+    "-Xconsistent-data-class-copy-visibility",
   )
   jvm()
 }
