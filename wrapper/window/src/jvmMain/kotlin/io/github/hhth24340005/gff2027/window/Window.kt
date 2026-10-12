@@ -127,30 +127,41 @@ public sealed class Window(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
     @PublishedApi internal val metalView: Long,
+    /** Native type: `CAMetalLayer*`. */
     public val metalLayer: Long,
   ) : Window(sdlWindow, mainDispatcher)
 
   public class Win32 internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    /** Native type: `HWND`. */
     public val hwnd: Long,
+    /** Native type: `HINSTANCE`. */
     public val hinstance: Long,
   ) : Window(sdlWindow, mainDispatcher)
 
   public class X11 internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    /** Native type: `Display*`. */
     public val display: Long,
+    /** Native type: Xlib `Window`, an ID rather than a pointer. */
     public val window: Long,
   ) : Window(sdlWindow, mainDispatcher)
 
   public class Wayland internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    /** Native type: `wl_display*`. */
     public val display: Long,
+    /** Native type: `wl_surface*`. */
     public val surface: Long,
   ) : Window(sdlWindow, mainDispatcher)
 
+  /**
+   * A window from SDL's `offscreen` driver, chosen with the environment
+   * variable `SDL_VIDEO_DRIVER=offscreen`. It has no native surface handles.
+   */
   public class Offscreen internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
