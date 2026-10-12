@@ -4,8 +4,8 @@
 
 Keep the public API at the top of each file so it reads without IDE tools.
 
-* Public declarations delegate to non-public functions
-  when their body is 3 lines or longer.
+* Public declarations call one function and only pass it parameters,
+  properties or getter-like calls. Lambdas they pass follow the same rule.
   Inline functions delegate to `@PublishedApi internal inline` ones.
 * Fields stay at the top of a class regardless of visibility.
 * Put non-public declarations below them, inside a region, in this order:
