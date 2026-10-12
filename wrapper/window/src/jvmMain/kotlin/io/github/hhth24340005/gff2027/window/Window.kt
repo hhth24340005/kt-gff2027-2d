@@ -105,6 +105,11 @@ public sealed class Window(
     public val surface: Long,
   ) : Window(sdlWindow, mainDispatcher)
 
+  public class Offscreen internal constructor(
+    sdlWindow: Long,
+    mainDispatcher: CoroutineDispatcher,
+  ) : Window(sdlWindow, mainDispatcher)
+
   // region internal
 
   @PublishedApi
@@ -340,6 +345,10 @@ private fun wrapSdlWindow(
         props.pointer(SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER),
         props.pointer(SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER),
       )
+    }
+
+    "offscreen" -> {
+      Window.Offscreen(window, mainDispatcher)
     }
 
     else -> {
