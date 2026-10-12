@@ -1,6 +1,5 @@
 package io.github.hhth24340005.gff2027.window
 
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.lwjgl.sdl.SDLEvents.SDL_EVENT_WINDOW_CLOSE_REQUESTED
@@ -11,7 +10,7 @@ import kotlin.time.Duration.Companion.seconds
 
 fun main(): Unit =
   runBlocking {
-    val closeRequests = Channel<Unit>(Channel.CONFLATED)
+    val closeRequests = CloseRequests()
     Window
       .createOnCurrentDispatcher(
         title = "integration test",
