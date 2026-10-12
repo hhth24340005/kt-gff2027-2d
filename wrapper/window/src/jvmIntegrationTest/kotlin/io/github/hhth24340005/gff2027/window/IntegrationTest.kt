@@ -47,6 +47,7 @@ fun main() {
       "cancelled caller cleans up" to ::cleansUpOnCancel,
       "already cancelled caller skips block" to ::skipsBlockWhenCancelled,
       "use from a non-main caller" to ::usesFromNonMainCaller,
+      "second use is rejected" to ::rejectsSecondUse,
       "unconfined dispatcher is rejected" to ::rejectsUnconfined,
     )
   for ([name, scenario] in scenarios) {
@@ -232,6 +233,25 @@ private suspend fun usesFromNonMainCaller(
       pushClose(window)
       check(requests.got()) { "request lost when called off main" }
     }
+  }
+}
+
+private suspend fun rejectsSecondUse(
+  @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,
+) {
+  val requests = CloseRequests()
+  val window = newWindow("used twice")
+  window.use(requests) {
+    val nested = runCatching { window.use(CloseRequests()) {} }
+    check(nested.exceptionOrNull() is IllegalStateException) {
+      "nested use was not rejected: $nested"
+    }
+    pushClose(window)
+    check(requests.got()) { "window stopped receiving after nested use" }
+  }
+  val again = runCatching { window.use(CloseRequests()) {} }
+  check(again.exceptionOrNull() is IllegalStateException) {
+    "second use was not rejected: $again"
   }
 }
 
