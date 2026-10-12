@@ -26,6 +26,7 @@ kotlin {
   sourceSets {
     jvmMain {
       dependencies {
+        api(libs.kotlinx.coroutines.core)
         implementation(libs.lwjgl)
         implementation(libs.lwjgl.sdl)
       }
