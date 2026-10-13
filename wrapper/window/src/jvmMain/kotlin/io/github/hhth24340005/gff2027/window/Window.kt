@@ -1,5 +1,6 @@
 package io.github.hhth24340005.gff2027.window
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
@@ -185,14 +186,17 @@ public sealed class Window(
         block(this)
       }
     } finally {
-      withContext(mainDispatcher + NonCancellable) {
-        if (this@Window is Cocoa) {
-          SDL_Metal_DestroyView(metalView)
-        }
-        SDL_DestroyWindow(sdlWindow)
-        SDL_QuitSubSystem(SDL_INIT_VIDEO)
-      }
+      withContext(mainDispatcher + NonCancellable) { destroy() }
     }
+  }
+
+  @PublishedApi
+  internal fun destroy() {
+    if (this is Cocoa) {
+      SDL_Metal_DestroyView(metalView)
+    }
+    SDL_DestroyWindow(sdlWindow)
+    SDL_QuitSubSystem(SDL_INIT_VIDEO)
   }
 
   // endregion
@@ -214,19 +218,7 @@ internal object SdlEvents {
     require(pollingInterval.isPositive()) {
       "Polling interval must be positive, but got: $pollingInterval"
     }
-    val windowId =
-      withContext(window.mainDispatcher) {
-        require(SDL_IsMainThread()) {
-          "Polling dispatcher must be on the main thread"
-        }
-        val windowId = SDL_GetWindowID(window.sdlWindow)
-        require(windowId != 0) {
-          "SDL_GetWindowID failed for window " +
-            "0x${window.sdlWindow.toHexString()}: ${SDL_GetError()}"
-        }
-        closeRequests += windowId to closeRequest.channel
-        windowId
-      }
+    val windowId = register(window, closeRequest)
     val pollJob =
       CoroutineScope(currentCoroutineContext())
         .launch(window.mainDispatcher) {
@@ -245,6 +237,36 @@ internal object SdlEvents {
         pollJob.cancelAndJoin()
         closeRequests -= windowId
       }
+    }
+  }
+
+  @PublishedApi
+  internal suspend fun register(
+    window: Window,
+    closeRequest: CloseRequests,
+  ): Int {
+    var registered: Int? = null
+    try {
+      return withContext(window.mainDispatcher) {
+        require(SDL_IsMainThread()) {
+          "Polling dispatcher must be on the main thread"
+        }
+        val windowId = SDL_GetWindowID(window.sdlWindow)
+        require(windowId != 0) {
+          "SDL_GetWindowID failed for window " +
+            "0x${window.sdlWindow.toHexString()}: ${SDL_GetError()}"
+        }
+        closeRequests += windowId to closeRequest.channel
+        windowId.also { registered = it }
+      }
+    } catch (e: CancellationException) {
+      // withContext drops the ID if the caller is cancelled before resuming
+      registered?.let {
+        withContext(window.mainDispatcher + NonCancellable) {
+          closeRequests -= it
+        }
+      }
+      throw e
     }
   }
 
@@ -300,19 +322,28 @@ private suspend fun createSdlWindow(
   require(width in 1..MAX_WINDOW_SIDE && height in 1..MAX_WINDOW_SIDE) {
     "Size must be within 1..$MAX_WINDOW_SIDE, but got: $size"
   }
-  return withContext(mainDispatcher) {
-    require(isMainThread()) {
-      "Window must be created on the main thread"
+  var created: Window? = null
+  try {
+    return withContext(mainDispatcher) {
+      require(isMainThread()) {
+        "Window must be created on the main thread"
+      }
+      check(SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        "SDL_InitSubSystem failed: ${SDL_GetError()}"
+      }
+      try {
+        openSdlWindow(title, size, mainDispatcher).also { created = it }
+      } catch (e: Throwable) {
+        SDL_QuitSubSystem(SDL_INIT_VIDEO)
+        throw e
+      }
     }
-    check(SDL_InitSubSystem(SDL_INIT_VIDEO)) {
-      "SDL_InitSubSystem failed: ${SDL_GetError()}"
+  } catch (e: CancellationException) {
+    // withContext drops the window if the caller is cancelled before resuming
+    created?.let {
+      withContext(mainDispatcher + NonCancellable) { it.destroy() }
     }
-    try {
-      openSdlWindow(title, size, mainDispatcher)
-    } catch (e: Throwable) {
-      SDL_QuitSubSystem(SDL_INIT_VIDEO)
-      throw e
-    }
+    throw e
   }
 }
 

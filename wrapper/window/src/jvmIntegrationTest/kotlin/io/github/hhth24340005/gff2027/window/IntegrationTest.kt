@@ -1,12 +1,16 @@
 package io.github.hhth24340005.gff2027.window
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -22,6 +26,8 @@ import org.lwjgl.sdl.SDLInit.SDL_WasInit
 import org.lwjgl.sdl.SDLVideo.SDL_GetWindowID
 import org.lwjgl.sdl.SDL_Event
 import org.lwjgl.system.Platform
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -45,6 +51,9 @@ fun main() {
       "out-of-range size is rejected" to ::rejectsBadSize,
       "exception in block is propagated" to ::propagatesException,
       "cancelled caller cleans up" to ::cleansUpOnCancel,
+      "cancel right after create cleans up" to ::cleansUpCancelAfterCreate,
+      "cancel right after registration cleans up" to
+        ::cleansUpCancelAfterRegistration,
       "already cancelled caller skips block" to ::skipsBlockWhenCancelled,
       "use from a non-main caller" to ::usesFromNonMainCaller,
       "second use is rejected" to ::rejectsSecondUse,
@@ -209,6 +218,41 @@ private suspend fun cleansUpOnCancel(
   check(result.isFailure) { "timeout did not propagate" }
 }
 
+private suspend fun cleansUpCancelAfterCreate(
+  scope: CoroutineScope,
+) {
+  val dispatcher = CancelAfterBlock(currentDispatcher())
+  val job =
+    scope.launch {
+      Window.create(
+        title = "cancelled after create",
+        size = 160 to 120,
+        mainDispatcher = dispatcher,
+      )
+    }
+  dispatcher.target = job
+  job.join()
+  check(job.isCancelled) { "create was not cancelled" }
+}
+
+private suspend fun cleansUpCancelAfterRegistration(
+  scope: CoroutineScope,
+) {
+  val dispatcher = CancelAfterBlock(currentDispatcher())
+  val window =
+    Window.create(
+      title = "cancelled after registration",
+      size = 160 to 120,
+      mainDispatcher = dispatcher,
+    )
+  var ran = false
+  val job = scope.launch { window.use(CloseRequests()) { ran = true } }
+  dispatcher.target = job
+  job.join()
+  check(job.isCancelled) { "use was not cancelled" }
+  check(!ran) { "block ran after registration was cancelled" }
+}
+
 private suspend fun skipsBlockWhenCancelled(
   scope: CoroutineScope,
 ) {
@@ -272,6 +316,26 @@ private suspend fun rejectsUnconfined(
     "polling off the main thread was not rejected: $result"
   }
 }
+
+// Cancels the caller after each block, before it resumes on its own
+// dispatcher, which is when withContext discards the block's result
+private class CancelAfterBlock(private val main: CoroutineDispatcher) :
+  CoroutineDispatcher() {
+  var target: Job? = null
+
+  override fun dispatch(
+    context: CoroutineContext,
+    block: Runnable,
+  ) {
+    main.dispatch(context) {
+      block.run()
+      target?.cancel()
+    }
+  }
+}
+
+private suspend fun currentDispatcher(): CoroutineDispatcher =
+  currentCoroutineContext()[ContinuationInterceptor] as CoroutineDispatcher
 
 private suspend fun newWindow(
   title: String,
