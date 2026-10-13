@@ -109,7 +109,8 @@ public sealed class Window(
    *
    * @param closeRequests receives this window's close requests and global
    * quit requests, conflated to at most one pending notification. Requests
-   * do not end [block] automatically. The channel is left open on exit.
+   * that arrived after creation are delivered when this starts. Requests do
+   * not end [block] automatically. The channel is left open on exit.
    * @param pollingInterval positive delay between polls when no event is
    * available; defaults to approximately 1/60 second.
    * @throws IllegalArgumentException if the interval is non-positive, the
@@ -195,6 +196,7 @@ public sealed class Window(
     if (this is Cocoa) {
       SDL_Metal_DestroyView(metalView)
     }
+    SdlEvents.pendingEvents -= SDL_GetWindowID(sdlWindow)
     SDL_DestroyWindow(sdlWindow)
     SDL_QuitSubSystem(SDL_INIT_VIDEO)
   }
@@ -207,6 +209,9 @@ public sealed class Window(
 // As SDL has a single event queue per process, we use an `object`
 @PublishedApi
 internal object SdlEvents {
+  // Event types that arrived for windows created but not yet used. A set, as
+  // a close request channel conflates repeated events anyway
+  val pendingEvents = mutableMapOf<Int, MutableSet<Int>>()
   val closeRequests = mutableMapOf<Int, SendChannel<Unit>>()
 
   suspend inline fun <R> usePoller(
@@ -256,6 +261,9 @@ internal object SdlEvents {
           "SDL_GetWindowID failed for window " +
             "0x${window.sdlWindow.toHexString()}: ${SDL_GetError()}"
         }
+        pendingEvents.remove(windowId)?.forEach { type ->
+          closeRequest.channel.deliver(type)
+        }
         closeRequests += windowId to closeRequest.channel
         windowId.also { registered = it }
       }
@@ -272,15 +280,13 @@ internal object SdlEvents {
 
   @PublishedApi
   internal fun SDL_Event.handle() {
-    when (this.type()) {
+    when (val type = this.type()) {
       SDL_EVENT_WINDOW_CLOSE_REQUESTED -> {
-        closeRequests[this.window().windowID()]?.trySend(Unit)
+        route(this.window().windowID(), type)
       }
 
       SDL_EVENT_QUIT -> {
-        closeRequests.forEach { [_, closeRequest] ->
-          closeRequest.trySend(Unit)
-        }
+        (closeRequests.keys + pendingEvents.keys).forEach { route(it, type) }
       }
 
       else -> {}
@@ -301,6 +307,28 @@ internal object SdlEvents {
         return
       }
       delay(interval)
+    }
+  }
+
+  // Holds the event until the window is used, or drops it if the window is
+  // already gone
+  private fun route(
+    windowId: Int,
+    type: Int,
+  ) {
+    val closeRequest = closeRequests[windowId]
+    if (closeRequest != null) {
+      closeRequest.deliver(type)
+    } else {
+      pendingEvents[windowId]?.add(type)
+    }
+  }
+
+  private fun SendChannel<Unit>.deliver(
+    type: Int,
+  ) {
+    when (type) {
+      SDL_EVENT_WINDOW_CLOSE_REQUESTED, SDL_EVENT_QUIT -> trySend(Unit)
     }
   }
 }
@@ -332,7 +360,11 @@ private suspend fun createSdlWindow(
         "SDL_InitSubSystem failed: ${SDL_GetError()}"
       }
       try {
-        openSdlWindow(title, size, mainDispatcher).also { created = it }
+        openSdlWindow(title, size, mainDispatcher).also {
+          SdlEvents.pendingEvents[SDL_GetWindowID(it.sdlWindow)] =
+            mutableSetOf()
+          created = it
+        }
       } catch (e: Throwable) {
         SDL_QuitSubSystem(SDL_INIT_VIDEO)
         throw e

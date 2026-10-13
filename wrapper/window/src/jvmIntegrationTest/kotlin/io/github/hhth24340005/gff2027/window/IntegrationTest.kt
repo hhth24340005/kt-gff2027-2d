@@ -47,6 +47,8 @@ fun main() {
       "request for a finished window is ignored" to ::ignoresFinishedWindow,
       "quit reaches every window" to ::quitReachesEveryWindow,
       "request pushed before use is delivered" to ::deliversEarlyRequest,
+      "request for an unused window is kept" to ::keepsRequestForUnusedWindow,
+      "quit reaches unused windows" to ::quitReachesUnusedWindows,
       "non-positive polling interval is rejected" to ::rejectsBadInterval,
       "out-of-range size is rejected" to ::rejectsBadSize,
       "exception in block is propagated" to ::propagatesException,
@@ -64,6 +66,9 @@ fun main() {
     check(SDL_WasInit(SDL_INIT_VIDEO) == 0) { "$name: video left initialized" }
     check(SdlEvents.closeRequests.isEmpty()) {
       "$name: window left registered"
+    }
+    check(SdlEvents.pendingEvents.isEmpty()) {
+      "$name: window left with pending events"
     }
     println("OK: $name")
   }
@@ -147,6 +152,33 @@ private suspend fun deliversEarlyRequest(
   window.use(requests) {
     check(requests.got()) { "request pushed before use was lost" }
   }
+}
+
+private suspend fun keepsRequestForUnusedWindow(
+  @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,
+) {
+  val a = newWindow("A")
+  val b = newWindow("B")
+  a.use(CloseRequests()) {
+    pushClose(b)
+    delay(100.milliseconds)
+  }
+  val requests = CloseRequests()
+  b.use(requests) {
+    check(requests.got()) { "request for B was lost while A polled" }
+  }
+}
+
+private suspend fun quitReachesUnusedWindows(
+  @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,
+) {
+  val a = newWindow("A")
+  val b = newWindow("B")
+  pushQuit()
+  val requestsA = CloseRequests()
+  a.use(requestsA) { check(requestsA.got()) { "A did not get quit" } }
+  val requestsB = CloseRequests()
+  b.use(requestsB) { check(requestsB.got()) { "unused B did not get quit" } }
 }
 
 private suspend fun rejectsBadInterval(
