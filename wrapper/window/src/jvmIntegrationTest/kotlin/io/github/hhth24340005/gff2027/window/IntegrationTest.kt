@@ -26,6 +26,7 @@ import org.lwjgl.sdl.SDLInit.SDL_WasInit
 import org.lwjgl.sdl.SDLVideo.SDL_GetWindowID
 import org.lwjgl.sdl.SDL_Event
 import org.lwjgl.system.Platform
+import kotlin.concurrent.thread
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
@@ -63,18 +64,62 @@ fun main() {
     )
   for ([name, scenario] in scenarios) {
     runBlocking { withTimeout(20.seconds) { scenario(this) } }
-    check(SDL_WasInit(SDL_INIT_VIDEO) == 0) { "$name: video left initialized" }
-    check(SdlEvents.closeRequests.isEmpty()) {
-      "$name: window left registered"
-    }
-    check(SdlEvents.pendingEvents.isEmpty()) {
-      "$name: window left with pending events"
-    }
-    println("OK: $name")
+    checkCleanedUp(name)
   }
+  // Runs outside the loop's runBlocking, which would otherwise keep the
+  // window's dispatcher running
+  val outlived = "window outliving its runBlocking throws"
+  withWatchdog(outlived, 20.seconds) { throwsWhenOutlivingRunBlocking() }
+  checkCleanedUp(outlived)
 }
 
 // region internal
+
+private fun checkCleanedUp(
+  name: String,
+) {
+  check(SDL_WasInit(SDL_INIT_VIDEO) == 0) { "$name: video left initialized" }
+  check(SdlEvents.closeRequests.isEmpty()) {
+    "$name: window left registered"
+  }
+  check(SdlEvents.pendingEvents.isEmpty()) {
+    "$name: window left with pending events"
+  }
+  println("OK: $name")
+}
+
+// Halts instead of failing, as a hang blocks the main thread for good
+private fun withWatchdog(
+  name: String,
+  timeout: Duration,
+  block: () -> Unit,
+) {
+  val watchdog =
+    thread(isDaemon = true) {
+      try {
+        Thread.sleep(timeout.inWholeMilliseconds)
+      } catch (_: InterruptedException) {
+        return@thread
+      }
+      System.err.println("$name: hung for $timeout")
+      Runtime.getRuntime().halt(1)
+    }
+  try {
+    block()
+  } finally {
+    watchdog.interrupt()
+  }
+}
+
+private fun throwsWhenOutlivingRunBlocking() {
+  val window = runBlocking { newWindow("outlived") }
+  val result = runCatching { runBlocking { window.use(CloseRequests()) {} } }
+  check(result.exceptionOrNull() is IllegalStateException) {
+    "using a window after its runBlocking ended did not throw: $result"
+  }
+  // The window was leaked, and we are back on the main thread
+  window.destroy()
+}
 
 private suspend fun rejectsFirstOffMain(
   @Suppress("UNUSED_PARAMETER") scope: CoroutineScope,

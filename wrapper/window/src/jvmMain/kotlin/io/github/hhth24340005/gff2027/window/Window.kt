@@ -116,7 +116,9 @@ public sealed class Window(
    * @throws IllegalArgumentException if the interval is non-positive, the
    * window has no valid SDL ID, or event polling runs off SDL's main thread.
    * Polling failures are reported through the caller's coroutine scope.
-   * @throws IllegalStateException if the window is already used.
+   * @throws IllegalStateException if the window is already used, or its
+   * dispatcher no longer runs on the main thread, as when the runBlocking
+   * that created it has ended. The window is leaked in that case.
    */
   public suspend inline fun <R> use(
     closeRequests: CloseRequests,
@@ -193,6 +195,13 @@ public sealed class Window(
 
   @PublishedApi
   internal fun destroy() {
+    // Off the main thread, Cocoa waits for it and hangs
+    check(isMainThread()) {
+      "Window 0x${sdlWindow.toHexString()} was leaked, as it must be " +
+        "destroyed on the main thread but its dispatcher no longer runs " +
+        "there. This happens when the runBlocking that created it has " +
+        "ended. Use the window before its dispatcher stops."
+    }
     if (this is Cocoa) {
       SDL_Metal_DestroyView(metalView)
     }
