@@ -18,6 +18,7 @@ gradle.lifecycle.beforeProject {
 include(":app")
 include(":game")
 include(":healthcheck")
+include(":math")
 include(":native:webgpu")
 include(":wrapper:webgpu")
 include(":wrapper:window")
