@@ -93,6 +93,7 @@ This command will output the fully bundled application image to `./app/build/jpa
 |-|-|
 | `app/` |  Bundles the game with Java into a standalone application |
 | `game/` | The game logic itself |
+| `engine/` | High-level graphics API |
 | `wrapper/` | Kotlin-friendly API for FFI |
 | `math/`| Math utilities |
 | `native/webgpu/` |  Downloads the WebGPU library and makes it callable from Java |
