@@ -6,8 +6,6 @@ group = "wrapper"
 base.archivesName = "wrapper-webgpu"
 
 kotlin {
-  compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
-
   sourceSets {
     commonMain {
       dependencies {
