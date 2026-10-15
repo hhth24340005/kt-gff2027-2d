@@ -11,7 +11,9 @@ kotlin {
     "-Xname-based-destructuring=complete",
     "-Xcompanion-blocks-and-extensions",
     "-Xconsistent-data-class-copy-visibility",
+    "-Xexpect-actual-classes",
   )
+  compilerOptions.optIn.add("kotlin.contracts.ExperimentalContracts")
   jvm()
 }
 
