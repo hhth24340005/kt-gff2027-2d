@@ -73,7 +73,7 @@ public value class Distance private constructor(private val bits: Int) :
 
       /**
        * @throws IllegalArgumentException if [meters] is not within 0 to
-       *   about 3.4e38. -0.0 counts as 0.
+       *   [Float.MAX_VALUE]. -0.0 counts as 0.
        */
       public fun fromMeters(
         meters: Double,
@@ -565,7 +565,7 @@ public value class Vertical private constructor(private val bits: Int) {
 
 /**
  * @throws IllegalArgumentException if this is not within 0 to
- *   about 3.4e38. -0.0 counts as 0.
+ *   [Float.MAX_VALUE]. -0.0 counts as 0.
  */
 public val Double.meters: Distance get() =
   Distance
