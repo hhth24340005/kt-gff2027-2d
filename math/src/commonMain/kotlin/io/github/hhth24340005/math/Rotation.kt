@@ -29,7 +29,7 @@ public value class Rotation private constructor(private val ccw: Angle) {
     @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
     precision: Int,
   ): String =
-    rotationString(ccw, precision = precision)
+    "↺ ${ccw.toString(precision = precision)}"
 
   companion {
     /** No rotation. */
@@ -81,7 +81,7 @@ public value class Angle private constructor(private val progression: Phase) {
     @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
     precision: Int,
   ): String =
-    "${(signedTurns * 360).toString(precision = precision)}°"
+    "${(progression.toDouble() * 360).toString(precision = precision)}°"
 
   companion {
     public val zero: Angle get() = Angle(Phase.zero)
@@ -107,21 +107,6 @@ public value class Angle private constructor(private val progression: Phase) {
     ): Angle =
       Angle(Phase.fromCycles(degrees % 360.0 / 360.0))
   }
-
-  // region internal
-
-  @PublishedApi
-  internal val signedTurns: Double
-    get() {
-      val turns = progression.toDouble()
-      return if (turns <= 0.5) {
-        turns
-      } else {
-        turns - 1.0
-      }
-    }
-
-  // endregion
 }
 
 @JvmInline
@@ -164,40 +149,5 @@ public val Double.radians: Angle get() = Angle.fromRadians(this)
 
 /** @throws IllegalArgumentException if [this] is not finite. */
 public val Double.degrees: Angle get() = Angle.fromDegrees(this)
-
-// endregion
-
-// region internal
-
-private inline fun <R> smallerMagnitude(
-  ccwAngle: Angle,
-  ccw: (Angle) -> R,
-  cw: (Angle) -> R,
-  none: () -> R,
-  opposite: () -> R,
-): R {
-  val turns = ccwAngle.signedTurns
-  return if (turns == 0.0) {
-    none()
-  } else if (turns == 0.5) {
-    opposite()
-  } else if (0.0 < turns) {
-    ccw(ccwAngle)
-  } else {
-    cw(-ccwAngle)
-  }
-}
-
-private fun rotationString(
-  ccwAngle: Angle,
-  precision: Int,
-): String =
-  smallerMagnitude(
-    ccwAngle,
-    ccw = { "${it.toString(precision = precision)} CCW" },
-    cw = { "${it.toString(precision = precision)} CW" },
-    none = { Angle.zero.toString(precision = precision) },
-    opposite = { Angle.opposite.toString(precision = precision) },
-  )
 
 // endregion
