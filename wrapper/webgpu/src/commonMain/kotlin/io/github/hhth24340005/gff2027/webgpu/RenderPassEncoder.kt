@@ -25,6 +25,17 @@ public fun RenderPassEncoder.draw(
 ): Unit =
   drawImpl(vertexCount, instanceCount, firstVertex, firstInstance)
 
+/**
+ * Uses [group] as bind group [index] for the following draws. See the WebGPU
+ * spec:
+ * https://www.w3.org/TR/webgpu/#dom-gpubindingcommandsmixin-setbindgroup
+ */
+public fun RenderPassEncoder.setBindGroup(
+  index: Int,
+  group: BindGroup,
+): Unit =
+  setBindGroupImpl(index, group)
+
 // region internal
 
 @PublishedApi
@@ -39,6 +50,11 @@ internal expect fun RenderPassEncoder.drawImpl(
   instanceCount: Int,
   firstVertex: Int,
   firstInstance: Int,
+)
+
+internal expect fun RenderPassEncoder.setBindGroupImpl(
+  index: Int,
+  group: BindGroup,
 )
 
 // endregion
