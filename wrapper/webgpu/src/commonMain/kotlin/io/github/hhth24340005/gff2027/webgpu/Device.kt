@@ -27,7 +27,9 @@ public suspend fun Device.createShaderModule(
   )
 
 /**
- * Creates a pipeline that draws triangle lists with one sample per pixel.
+ * Creates a pipeline that draws triangle lists with one sample per pixel. Its
+ * bind group layouts are derived from the shaders, and
+ * [RenderPipeline.getBindGroupLayout] returns them.
  */
 context(scope: ResourceScope)
 public suspend fun Device.createRenderPipeline(
@@ -78,6 +80,22 @@ public suspend fun Device.createSampler(
   )
 
 /**
+ * Creates a bind group of [entries] that matches [layout]. The scope releases
+ * it when it exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createBindGroup(
+  layout: BindGroupLayout,
+  entries: List<BindGroupEntry>,
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  label: String? = null,
+): BindGroup =
+  scope.install(
+    acquire = { createBindGroupImpl(layout, entries, label) },
+    release = { group, _ -> group.release() },
+  )
+
+/**
  * Creates an encoder that records GPU commands. The scope releases it when
  * it exits.
  */
@@ -112,6 +130,12 @@ internal expect fun Device.createSamplerImpl(
   minFilter: FilterMode,
   label: String?,
 ): Sampler
+
+internal expect fun Device.createBindGroupImpl(
+  layout: BindGroupLayout,
+  entries: List<BindGroupEntry>,
+  label: String?,
+): BindGroup
 
 internal expect fun Device.createCommandEncoderImpl(): CommandEncoder
 

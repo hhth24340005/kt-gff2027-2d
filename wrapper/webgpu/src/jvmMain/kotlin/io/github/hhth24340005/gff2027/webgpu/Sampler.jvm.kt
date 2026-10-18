@@ -5,7 +5,7 @@ import java.lang.foreign.MemorySegment
 
 public actual class Sampler internal constructor(
   internal val handle: MemorySegment,
-)
+) : BindingResource
 
 // region internal
 

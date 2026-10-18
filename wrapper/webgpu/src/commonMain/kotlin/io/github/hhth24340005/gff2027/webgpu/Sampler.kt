@@ -4,7 +4,7 @@ package io.github.hhth24340005.gff2027.webgpu
  * How shaders read a texture, such as the filter between texels. Obtained
  * from [Device.createSampler].
  */
-public expect class Sampler
+public expect class Sampler : BindingResource
 
 /** How a [Sampler] picks colors between texels. */
 public enum class FilterMode {
