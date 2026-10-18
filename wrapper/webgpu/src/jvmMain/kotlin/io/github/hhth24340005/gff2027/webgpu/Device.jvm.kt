@@ -2,18 +2,22 @@ package io.github.hhth24340005.gff2027.webgpu
 
 import wgpu_native.WGPUChainedStruct
 import wgpu_native.WGPUColorTargetState
+import wgpu_native.WGPUExtent3D
 import wgpu_native.WGPUFragmentState
 import wgpu_native.WGPUMultisampleState
 import wgpu_native.WGPUPrimitiveState
 import wgpu_native.WGPURenderPipelineDescriptor
 import wgpu_native.WGPUShaderModuleDescriptor
 import wgpu_native.WGPUShaderSourceWGSL
+import wgpu_native.WGPUTextureDescriptor
 import wgpu_native.WGPUVertexState
 import wgpu_native.webgpu_h.WGPUPrimitiveTopology_TriangleList
 import wgpu_native.webgpu_h.WGPUSType_ShaderSourceWGSL
+import wgpu_native.webgpu_h.WGPUTextureDimension_2D
 import wgpu_native.webgpu_h.wgpuDeviceCreateCommandEncoder
 import wgpu_native.webgpu_h.wgpuDeviceCreateRenderPipeline
 import wgpu_native.webgpu_h.wgpuDeviceCreateShaderModule
+import wgpu_native.webgpu_h.wgpuDeviceCreateTexture
 import wgpu_native.webgpu_h.wgpuDeviceGetQueue
 import wgpu_native.webgpu_h.wgpuDeviceRelease
 import wgpu_native.webgpu_h.wgpuQueueRelease
@@ -52,6 +56,20 @@ internal actual fun Device.createRenderPipelineImpl(
       wgpuDeviceCreateRenderPipeline(
         handle,
         renderPipelineDescriptor(arena, vertex, fragment, label),
+      ),
+    )
+  }
+
+internal actual fun Device.createTextureImpl(
+  size: Pair<Int, Int>,
+  format: TextureFormat,
+  label: String?,
+): Texture =
+  Arena.ofConfined().use { arena ->
+    Texture(
+      wgpuDeviceCreateTexture(
+        handle,
+        textureDescriptor(arena, size, format, label),
       ),
     )
   }
@@ -157,7 +175,37 @@ private fun colorTargetStates(
   return states
 }
 
+private fun textureDescriptor(
+  arena: Arena,
+  size: Pair<Int, Int>,
+  format: TextureFormat,
+  label: String?,
+): MemorySegment {
+  val [width, height] = size
+  val descriptor = WGPUTextureDescriptor.allocate(arena)
+  if (label != null) {
+    WGPUTextureDescriptor.label(descriptor).setStringView(arena, label)
+  }
+  WGPUTextureDescriptor.usage(
+    descriptor,
+    TEXTURE_USAGE_COPY_DST or TEXTURE_USAGE_TEXTURE_BINDING,
+  )
+  WGPUTextureDescriptor.dimension(descriptor, WGPUTextureDimension_2D())
+  val extent = WGPUTextureDescriptor.size(descriptor)
+  WGPUExtent3D.width(extent, width)
+  WGPUExtent3D.height(extent, height)
+  WGPUExtent3D.depthOrArrayLayers(extent, 1)
+  WGPUTextureDescriptor.format(descriptor, format.native)
+  WGPUTextureDescriptor.mipLevelCount(descriptor, 1)
+  WGPUTextureDescriptor.sampleCount(descriptor, 1)
+  return descriptor
+}
+
 // jextract skips it, as webgpu.h declares it as static const
 private const val COLOR_WRITE_MASK_ALL = 0xFL
+
+// jextract skips them, as webgpu.h declares them as static const
+private const val TEXTURE_USAGE_COPY_DST = 0x2L
+private const val TEXTURE_USAGE_TEXTURE_BINDING = 0x4L
 
 // endregion

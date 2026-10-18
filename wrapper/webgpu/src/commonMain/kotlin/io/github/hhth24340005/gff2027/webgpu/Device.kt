@@ -42,6 +42,23 @@ public suspend fun Device.createRenderPipeline(
   )
 
 /**
+ * Creates a 2D texture of [size], given as width to height, that shaders can
+ * sample and [Queue.writeTexture] can fill. The scope releases it when it
+ * exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createTexture(
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  size: Pair<Int, Int>,
+  format: TextureFormat,
+  label: String? = null,
+): Texture =
+  scope.install(
+    acquire = { createTextureImpl(size, format, label) },
+    release = { texture, _ -> texture.release() },
+  )
+
+/**
  * Creates an encoder that records GPU commands. The scope releases it when
  * it exits.
  */
@@ -64,6 +81,12 @@ internal expect fun Device.createRenderPipelineImpl(
   fragment: FragmentState,
   label: String?,
 ): RenderPipeline
+
+internal expect fun Device.createTextureImpl(
+  size: Pair<Int, Int>,
+  format: TextureFormat,
+  label: String?,
+): Texture
 
 internal expect fun Device.createCommandEncoderImpl(): CommandEncoder
 

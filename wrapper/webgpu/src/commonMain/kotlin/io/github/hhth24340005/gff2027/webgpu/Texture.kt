@@ -2,7 +2,10 @@ package io.github.hhth24340005.gff2027.webgpu
 
 import arrow.fx.coroutines.ResourceScope
 
-/** An image on the GPU. Obtained from [Surface.getCurrentTexture]. */
+/**
+ * An image on the GPU. Obtained from [Device.createTexture] or
+ * [Surface.getCurrentTexture].
+ */
 public expect class Texture
 
 /**
