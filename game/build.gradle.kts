@@ -13,7 +13,7 @@ val nativeLibraries: Configuration =
 kotlin {
   @OptIn(ExperimentalKotlinGradlePluginApi::class)
   jvm {
-    val main = "MainKt"
+    val main = "io.github.hhth24340005.gff2027.game2d.MainKt"
     binaries {
       executable {
         mainClass = main
