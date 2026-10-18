@@ -44,6 +44,21 @@ public suspend fun Device.createRenderPipeline(
   )
 
 /**
+ * Creates a buffer of [size] bytes that shaders read as uniforms and
+ * [Queue.writeBuffer] can fill. The scope releases it when it exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createBuffer(
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  size: Int,
+  label: String? = null,
+): Buffer =
+  scope.install(
+    acquire = { createBufferImpl(size, label) },
+    release = { buffer, _ -> buffer.release() },
+  )
+
+/**
  * Creates a 2D texture of [size], given as width to height, that shaders can
  * sample and [Queue.writeTexture] can fill. The scope releases it when it
  * exits.
@@ -118,6 +133,11 @@ internal expect fun Device.createRenderPipelineImpl(
   fragment: FragmentState,
   label: String?,
 ): RenderPipeline
+
+internal expect fun Device.createBufferImpl(
+  size: Int,
+  label: String?,
+): Buffer
 
 internal expect fun Device.createTextureImpl(
   size: Pair<Int, Int>,

@@ -12,6 +12,13 @@ public fun Queue.submit(
 ): Unit =
   submitImpl(commands)
 
+/** Copies [data] into [buffer] from its start. */
+public fun Queue.writeBuffer(
+  buffer: Buffer,
+  data: FloatArray,
+): Unit =
+  writeBufferImpl(buffer, data)
+
 /**
  * Copies [data] into the whole [texture], whose rows each start
  * [elementsPerRow] elements after the previous one, top row first. Each
@@ -31,6 +38,11 @@ public fun Queue.writeTexture(
 
 internal expect fun Queue.submitImpl(
   commands: List<CommandBuffer>,
+)
+
+internal expect fun Queue.writeBufferImpl(
+  buffer: Buffer,
+  data: FloatArray,
 )
 
 internal expect fun Queue.writeTextureImpl(
