@@ -59,6 +59,25 @@ public suspend fun Device.createTexture(
   )
 
 /**
+ * Creates a sampler that clamps coordinates outside a texture to its edge.
+ * The scope releases it when it exits.
+ *
+ * @param magFilter the filter where a texel covers more than a pixel.
+ * @param minFilter the filter where a texel covers less than a pixel.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createSampler(
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  magFilter: FilterMode = FilterMode.Nearest,
+  minFilter: FilterMode = FilterMode.Nearest,
+  label: String? = null,
+): Sampler =
+  scope.install(
+    acquire = { createSamplerImpl(magFilter, minFilter, label) },
+    release = { sampler, _ -> sampler.release() },
+  )
+
+/**
  * Creates an encoder that records GPU commands. The scope releases it when
  * it exits.
  */
@@ -87,6 +106,12 @@ internal expect fun Device.createTextureImpl(
   format: TextureFormat,
   label: String?,
 ): Texture
+
+internal expect fun Device.createSamplerImpl(
+  magFilter: FilterMode,
+  minFilter: FilterMode,
+  label: String?,
+): Sampler
 
 internal expect fun Device.createCommandEncoderImpl(): CommandEncoder
 
