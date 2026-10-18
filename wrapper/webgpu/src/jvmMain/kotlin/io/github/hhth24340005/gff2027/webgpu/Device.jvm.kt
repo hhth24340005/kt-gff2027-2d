@@ -7,15 +7,19 @@ import wgpu_native.WGPUFragmentState
 import wgpu_native.WGPUMultisampleState
 import wgpu_native.WGPUPrimitiveState
 import wgpu_native.WGPURenderPipelineDescriptor
+import wgpu_native.WGPUSamplerDescriptor
 import wgpu_native.WGPUShaderModuleDescriptor
 import wgpu_native.WGPUShaderSourceWGSL
 import wgpu_native.WGPUTextureDescriptor
 import wgpu_native.WGPUVertexState
+import wgpu_native.webgpu_h.WGPUAddressMode_ClampToEdge
+import wgpu_native.webgpu_h.WGPUMipmapFilterMode_Nearest
 import wgpu_native.webgpu_h.WGPUPrimitiveTopology_TriangleList
 import wgpu_native.webgpu_h.WGPUSType_ShaderSourceWGSL
 import wgpu_native.webgpu_h.WGPUTextureDimension_2D
 import wgpu_native.webgpu_h.wgpuDeviceCreateCommandEncoder
 import wgpu_native.webgpu_h.wgpuDeviceCreateRenderPipeline
+import wgpu_native.webgpu_h.wgpuDeviceCreateSampler
 import wgpu_native.webgpu_h.wgpuDeviceCreateShaderModule
 import wgpu_native.webgpu_h.wgpuDeviceCreateTexture
 import wgpu_native.webgpu_h.wgpuDeviceGetQueue
@@ -70,6 +74,20 @@ internal actual fun Device.createTextureImpl(
       wgpuDeviceCreateTexture(
         handle,
         textureDescriptor(arena, size, format, label),
+      ),
+    )
+  }
+
+internal actual fun Device.createSamplerImpl(
+  magFilter: FilterMode,
+  minFilter: FilterMode,
+  label: String?,
+): Sampler =
+  Arena.ofConfined().use { arena ->
+    Sampler(
+      wgpuDeviceCreateSampler(
+        handle,
+        samplerDescriptor(arena, magFilter, minFilter, label),
       ),
     )
   }
@@ -201,11 +219,36 @@ private fun textureDescriptor(
   return descriptor
 }
 
+private fun samplerDescriptor(
+  arena: Arena,
+  magFilter: FilterMode,
+  minFilter: FilterMode,
+  label: String?,
+): MemorySegment {
+  val descriptor = WGPUSamplerDescriptor.allocate(arena)
+  if (label != null) {
+    WGPUSamplerDescriptor.label(descriptor).setStringView(arena, label)
+  }
+  WGPUSamplerDescriptor.addressModeU(descriptor, WGPUAddressMode_ClampToEdge())
+  WGPUSamplerDescriptor.addressModeV(descriptor, WGPUAddressMode_ClampToEdge())
+  WGPUSamplerDescriptor.addressModeW(descriptor, WGPUAddressMode_ClampToEdge())
+  WGPUSamplerDescriptor.magFilter(descriptor, magFilter.native)
+  WGPUSamplerDescriptor.minFilter(descriptor, minFilter.native)
+  WGPUSamplerDescriptor
+    .mipmapFilter(descriptor, WGPUMipmapFilterMode_Nearest())
+  // The defaults of WGPU_SAMPLER_DESCRIPTOR_INIT, as allocate zeroes them
+  WGPUSamplerDescriptor.lodMaxClamp(descriptor, LOD_MAX_CLAMP)
+  WGPUSamplerDescriptor.maxAnisotropy(descriptor, 1)
+  return descriptor
+}
+
 // jextract skips it, as webgpu.h declares it as static const
 private const val COLOR_WRITE_MASK_ALL = 0xFL
 
 // jextract skips them, as webgpu.h declares them as static const
 private const val TEXTURE_USAGE_COPY_DST = 0x2L
 private const val TEXTURE_USAGE_TEXTURE_BINDING = 0x4L
+
+private const val LOD_MAX_CLAMP = 32f
 
 // endregion
