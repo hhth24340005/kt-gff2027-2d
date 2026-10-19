@@ -1,5 +1,12 @@
 plugins {
   `kotlin-dsl`
+  alias(libs.plugins.detekt)
+}
+
+detekt {
+  config.setFrom(file("../detekt.yml"))
+  buildUponDefaultConfig = true
+  allRules = true
 }
 
 fun Provider<PluginDependency>.asDependency(): Provider<String> =
@@ -16,6 +23,10 @@ dependencies {
   )
   implementation(
     libs.plugins.kotest
+      .asDependency(),
+  )
+  implementation(
+    libs.plugins.detekt
       .asDependency(),
   )
 }

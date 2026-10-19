@@ -1,5 +1,6 @@
 plugins {
   id("convention.kotlin-multiplatform")
+  id("convention.detekt")
 }
 
 group = "wrapper"

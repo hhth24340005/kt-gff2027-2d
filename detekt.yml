@@ -1,5 +1,41 @@
+comments:
+  OutdatedDocumentation:
+    active: false
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicProperty:
+    active: false
+
+complexity:
+  LabeledExpression:
+    active: false
+  TooManyFunctions:
+    active: false
+
+coroutines:
+  InjectDispatcher:
+    excludes: ['**/Main.kt']
+  SuspendFunInFinallySection:
+    active: false
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+
+naming:
+  FunctionNameMaxLength:
+    active: false
+  MatchingDeclarationName:
+    active: false
+
 style:
-  BracesOnIfStatements:
-    active: true
-    singleLine: always
-    multiLine: always
+  MagicNumber:
+    active: false
+  MultilineRawStringIndentation:
+    active: false
+  RedundantVisibilityModifier:
+    active: false
+  UnderscoresInNumericLiterals:
+    active: false
