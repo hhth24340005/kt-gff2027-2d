@@ -7,6 +7,10 @@ plugins {
   id("convention.wgsl")
 }
 
+wgsl {
+  packageName = "io.github.hhth24340005.gff2027.game2d"
+}
+
 val nativeLibraries: Configuration =
   configurations.create("nativeLibraries") {
     isCanBeConsumed = false

@@ -1,5 +1,33 @@
-// Checks in allTests that the shaders under src/*/wgsl compile on this
+// Embeds the shaders under src/<source set>/wgsl into that source set as
+// Kotlin constants, and checks in allTests that they compile on this
 // machine's GPU
+
+import convention.GenerateWgslConstants
+import convention.WgslExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
+plugins {
+  id("org.jetbrains.kotlin.multiplatform")
+}
+
+val wgsl: WgslExtension = extensions.create<WgslExtension>("wgsl")
+
+extensions.configure<KotlinMultiplatformExtension> {
+  sourceSets.configureEach {
+    val sourceSet = name
+    val generate =
+      tasks.register<GenerateWgslConstants>(
+        "generate${sourceSet.replaceFirstChar { it.uppercase() }}Wgsl",
+      ) {
+        description = "Embeds the WGSL shaders of $sourceSet as constants."
+        shaderDirectory = layout.projectDirectory.dir("src/$sourceSet/wgsl")
+        packageName = wgsl.packageName
+        outputDirectory =
+          layout.buildDirectory.dir("generated/wgsl/$sourceSet/kotlin")
+      }
+    kotlin.srcDir(generate)
+  }
+}
 
 val wgslValidator: Configuration =
   configurations.create("wgslValidator") {
