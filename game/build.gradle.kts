@@ -4,6 +4,7 @@ plugins {
   id("convention.kotlin-multiplatform")
   id("convention.kotest")
   id("convention.detekt")
+  id("convention.wgsl")
 }
 
 val nativeLibraries: Configuration =
