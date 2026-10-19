@@ -1,7 +1,6 @@
 plugins {
   alias(libs.plugins.kotlinx.serialization) apply false
   alias(libs.plugins.kotlinx.atomicfu) apply false
-  alias(libs.plugins.detekt)
 }
 
 repositories {
@@ -40,10 +39,7 @@ tasks.register<JavaExec>("ktlintFormat") {
   args(ktlintPatterns)
 }
 
-detekt {
-  config.setFrom("detekt.yml")
-  source.setFrom(
-    subprojects.map { it.file("src") },
-    "build-logic/src",
-  )
+tasks.register("detekt") {
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  dependsOn(gradle.includedBuild("build-logic").task(":detekt"))
 }

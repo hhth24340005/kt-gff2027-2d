@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 plugins {
   id("convention.kotlin-multiplatform")
   id("convention.kotest")
+  id("convention.detekt")
 }
 
 val nativeLibraries: Configuration =
