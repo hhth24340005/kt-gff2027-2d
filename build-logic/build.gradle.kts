@@ -1,6 +1,16 @@
+buildscript {
+  dependencyLocking {
+    lockAllConfigurations()
+  }
+}
+
 plugins {
   `kotlin-dsl`
   alias(libs.plugins.detekt)
+}
+
+dependencyLocking {
+  lockAllConfigurations()
 }
 
 detekt {
