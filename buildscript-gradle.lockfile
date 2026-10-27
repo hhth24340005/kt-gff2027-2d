@@ -1,15 +1,15 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-build-tools-api:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-gradle-plugin-annotations:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-gradle-plugins-bom:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-native-utils:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-serialization:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-tooling-core:2.5.0-Beta1=classpath
-org.jetbrains.kotlin:kotlin-util-io:2.5.0-Beta1=classpath
+org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-build-tools-api:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-gradle-plugin-annotations:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-gradle-plugins-bom:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-native-utils:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-serialization:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-tooling-core:2.5.0-Beta2=classpath
+org.jetbrains.kotlin:kotlin-util-io:2.5.0-Beta2=classpath
 org.jetbrains.kotlinx.atomicfu:org.jetbrains.kotlinx.atomicfu.gradle.plugin:0.33.0=classpath
 org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.33.0=classpath
 empty=
