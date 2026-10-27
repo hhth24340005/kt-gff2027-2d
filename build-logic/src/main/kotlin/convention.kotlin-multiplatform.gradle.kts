@@ -4,6 +4,7 @@ plugins {
 
 kotlin {
   explicitApi()
+  compilerOptions.allWarningsAsErrors = true
   compilerOptions.freeCompilerArgs.addAll(
     "-Xexplicit-context-arguments",
     "-Xreturn-value-checker=full",
