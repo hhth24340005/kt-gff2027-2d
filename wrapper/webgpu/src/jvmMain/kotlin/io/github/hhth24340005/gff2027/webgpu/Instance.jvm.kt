@@ -3,6 +3,7 @@ package io.github.hhth24340005.gff2027.webgpu
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -51,6 +52,7 @@ internal actual fun Instance.release() {
 // Callbacks arrive only while someone processes events, so pump them while
 // waiting. A cancelled caller still waits for the callback, because it lives
 // in the caller's arena, and releases what the callback delivers
+@OptIn(ExperimentalCoroutinesApi::class)
 internal suspend fun <T> Instance.awaitCallback(
   release: (T) -> Unit,
   request: (CompletableDeferred<T>) -> Unit,
