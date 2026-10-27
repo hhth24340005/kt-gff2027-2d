@@ -301,11 +301,12 @@ private suspend fun cleansUpCancelAfterCreate(
   val dispatcher = CancelAfterBlock(currentDispatcher())
   val job =
     scope.launch {
-      Window.create(
-        title = "cancelled after create",
-        size = 160 to 120,
-        mainDispatcher = dispatcher,
-      )
+      val _ =
+        Window.create(
+          title = "cancelled after create",
+          size = 160 to 120,
+          mainDispatcher = dispatcher,
+        )
     }
   dispatcher.target = job
   job.join()
