@@ -27,10 +27,14 @@ exceptions:
 naming:
   FunctionNameMaxLength:
     active: false
+  FunctionNameMinLength:
+    active: false
   MatchingDeclarationName:
     active: false
 
 style:
+  ClassOrdering:
+    active: false
   MagicNumber:
     active: false
   MultilineRawStringIndentation:
@@ -39,3 +43,5 @@ style:
     active: false
   UnderscoresInNumericLiterals:
     active: false
+  UnnecessaryParentheses:
+    allowForUnclearPrecedence: true
