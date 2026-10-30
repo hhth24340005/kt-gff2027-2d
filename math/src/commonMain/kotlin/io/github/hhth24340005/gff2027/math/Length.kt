@@ -13,16 +13,16 @@ package io.github.hhth24340005.gff2027.math
 public value class Distance private constructor(private val bits: Int) :
   Comparable<Distance> {
     /** This distance toward the right. */
-    public val right: Horizontal get() = Horizontal.right(this)
+    public val right: HorizontalDistance get() = HorizontalDistance.right(this)
 
     /** This distance toward the left. */
-    public val left: Horizontal get() = Horizontal.left(this)
+    public val left: HorizontalDistance get() = HorizontalDistance.left(this)
 
     /** This distance upward. */
-    public val up: Vertical get() = Vertical.up(this)
+    public val up: VerticalDistance get() = VerticalDistance.up(this)
 
     /** This distance downward. */
-    public val down: Vertical get() = Vertical.down(this)
+    public val down: VerticalDistance get() = VerticalDistance.down(this)
 
     public fun coerceAtMost(
       maximumValue: Distance,
@@ -220,37 +220,39 @@ public value class Distance private constructor(private val bits: Int) :
  * It is stored as a Float, so it keeps about 7 significant digits.
  */
 @JvmInline
-public value class Horizontal private constructor(private val bits: Int) {
+public value class HorizontalDistance private constructor(
+  private val bits: Int,
+) {
   /** @throws ArithmeticException if the sum is beyond the Float range. */
   public operator fun plus(
-    other: Horizontal,
-  ): Horizontal =
-    Horizontal(addBits(bits, other.bits))
+    other: HorizontalDistance,
+  ): HorizontalDistance =
+    HorizontalDistance(addBits(bits, other.bits))
 
   /**
    * @throws ArithmeticException if the difference is beyond the Float
    *   range.
    */
   public operator fun minus(
-    other: Horizontal,
-  ): Horizontal =
-    Horizontal(subtractBits(bits, other.bits))
+    other: HorizontalDistance,
+  ): HorizontalDistance =
+    HorizontalDistance(subtractBits(bits, other.bits))
 
   /** Combines this with [other] into a displacement on the plane. */
   public operator fun plus(
-    other: Vertical,
+    other: VerticalDistance,
   ): Displacement2 =
     Displacement2(this, other)
 
   /** Combines this with the opposite of [other] on the plane. */
   public operator fun minus(
-    other: Vertical,
+    other: VerticalDistance,
   ): Displacement2 =
     Displacement2(this, -other)
 
   /** Returns the same distance toward the other side. */
-  public operator fun unaryMinus(): Horizontal =
-    Horizontal(negateBits(bits))
+  public operator fun unaryMinus(): HorizontalDistance =
+    HorizontalDistance(negateBits(bits))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -260,8 +262,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Double,
-  ): Horizontal =
-    Horizontal(timesBits(bits, factor))
+  ): HorizontalDistance =
+    HorizontalDistance(timesBits(bits, factor))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -272,8 +274,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Double,
-  ): Horizontal =
-    Horizontal(divBits(bits, divisor))
+  ): HorizontalDistance =
+    HorizontalDistance(divBits(bits, divisor))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -283,8 +285,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Float,
-  ): Horizontal =
-    Horizontal(timesBits(bits, factor.toDouble()))
+  ): HorizontalDistance =
+    HorizontalDistance(timesBits(bits, factor.toDouble()))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -295,8 +297,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Float,
-  ): Horizontal =
-    Horizontal(divBits(bits, divisor.toDouble()))
+  ): HorizontalDistance =
+    HorizontalDistance(divBits(bits, divisor.toDouble()))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -305,8 +307,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Int,
-  ): Horizontal =
-    Horizontal(timesBits(bits, factor.toDouble()))
+  ): HorizontalDistance =
+    HorizontalDistance(timesBits(bits, factor.toDouble()))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -316,8 +318,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Int,
-  ): Horizontal =
-    Horizontal(divBits(bits, divisor.toDouble()))
+  ): HorizontalDistance =
+    HorizontalDistance(divBits(bits, divisor.toDouble()))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -326,8 +328,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Long,
-  ): Horizontal =
-    Horizontal(timesBits(bits, factor.toDouble()))
+  ): HorizontalDistance =
+    HorizontalDistance(timesBits(bits, factor.toDouble()))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -337,8 +339,8 @@ public value class Horizontal private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Long,
-  ): Horizontal =
-    Horizontal(divBits(bits, divisor.toDouble()))
+  ): HorizontalDistance =
+    HorizontalDistance(divBits(bits, divisor.toDouble()))
 
   /**
    * Returns the distance toward the right in meters, such as `→ -1.500 m`
@@ -361,7 +363,7 @@ public value class Horizontal private constructor(private val bits: Int) {
 
   companion {
     /** No distance to either side. */
-    public val zero: Horizontal get() = Horizontal(ZERO_BITS)
+    public val zero: HorizontalDistance get() = HorizontalDistance(ZERO_BITS)
   }
 
   // region internal
@@ -371,18 +373,18 @@ public value class Horizontal private constructor(private val bits: Int) {
   companion {
     internal fun right(
       distance: Distance,
-    ): Horizontal =
-      Horizontal(distance.meters.toFiniteBitsOrThrow())
+    ): HorizontalDistance =
+      HorizontalDistance(distance.meters.toFiniteBitsOrThrow())
 
     internal fun left(
       distance: Distance,
-    ): Horizontal =
-      Horizontal((-distance.meters).toFiniteBitsOrThrow())
+    ): HorizontalDistance =
+      HorizontalDistance((-distance.meters).toFiniteBitsOrThrow())
 
     internal fun fromRightMeters(
       meters: Float,
-    ): Horizontal =
-      Horizontal(meters.toFiniteBitsOrThrow())
+    ): HorizontalDistance =
+      HorizontalDistance(meters.toFiniteBitsOrThrow())
   }
 
   // endregion
@@ -395,37 +397,39 @@ public value class Horizontal private constructor(private val bits: Int) {
  * It is stored as a Float, so it keeps about 7 significant digits.
  */
 @JvmInline
-public value class Vertical private constructor(private val bits: Int) {
+public value class VerticalDistance private constructor(
+  private val bits: Int,
+) {
   /** @throws ArithmeticException if the sum is beyond the Float range. */
   public operator fun plus(
-    other: Vertical,
-  ): Vertical =
-    Vertical(addBits(bits, other.bits))
+    other: VerticalDistance,
+  ): VerticalDistance =
+    VerticalDistance(addBits(bits, other.bits))
 
   /**
    * @throws ArithmeticException if the difference is beyond the Float
    *   range.
    */
   public operator fun minus(
-    other: Vertical,
-  ): Vertical =
-    Vertical(subtractBits(bits, other.bits))
+    other: VerticalDistance,
+  ): VerticalDistance =
+    VerticalDistance(subtractBits(bits, other.bits))
 
   /** Combines this with [other] into a displacement on the plane. */
   public operator fun plus(
-    other: Horizontal,
+    other: HorizontalDistance,
   ): Displacement2 =
     Displacement2(other, this)
 
   /** Combines this with the opposite of [other] on the plane. */
   public operator fun minus(
-    other: Horizontal,
+    other: HorizontalDistance,
   ): Displacement2 =
     Displacement2(-other, this)
 
   /** Returns the same distance toward the other side. */
-  public operator fun unaryMinus(): Vertical =
-    Vertical(negateBits(bits))
+  public operator fun unaryMinus(): VerticalDistance =
+    VerticalDistance(negateBits(bits))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -435,8 +439,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Double,
-  ): Vertical =
-    Vertical(timesBits(bits, factor))
+  ): VerticalDistance =
+    VerticalDistance(timesBits(bits, factor))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -447,8 +451,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Double,
-  ): Vertical =
-    Vertical(divBits(bits, divisor))
+  ): VerticalDistance =
+    VerticalDistance(divBits(bits, divisor))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -458,8 +462,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Float,
-  ): Vertical =
-    Vertical(timesBits(bits, factor.toDouble()))
+  ): VerticalDistance =
+    VerticalDistance(timesBits(bits, factor.toDouble()))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -470,8 +474,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Float,
-  ): Vertical =
-    Vertical(divBits(bits, divisor.toDouble()))
+  ): VerticalDistance =
+    VerticalDistance(divBits(bits, divisor.toDouble()))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -480,8 +484,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Int,
-  ): Vertical =
-    Vertical(timesBits(bits, factor.toDouble()))
+  ): VerticalDistance =
+    VerticalDistance(timesBits(bits, factor.toDouble()))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -491,8 +495,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Int,
-  ): Vertical =
-    Vertical(divBits(bits, divisor.toDouble()))
+  ): VerticalDistance =
+    VerticalDistance(divBits(bits, divisor.toDouble()))
 
   /**
    * Goes toward the other side if [factor] is negative.
@@ -501,8 +505,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun times(
     factor: Long,
-  ): Vertical =
-    Vertical(timesBits(bits, factor.toDouble()))
+  ): VerticalDistance =
+    VerticalDistance(timesBits(bits, factor.toDouble()))
 
   /**
    * Goes toward the other side if [divisor] is negative.
@@ -512,8 +516,8 @@ public value class Vertical private constructor(private val bits: Int) {
    */
   public operator fun div(
     divisor: Long,
-  ): Vertical =
-    Vertical(divBits(bits, divisor.toDouble()))
+  ): VerticalDistance =
+    VerticalDistance(divBits(bits, divisor.toDouble()))
 
   /**
    * Returns the distance upward in meters, such as `↑ -1.500 m` for
@@ -536,7 +540,7 @@ public value class Vertical private constructor(private val bits: Int) {
 
   companion {
     /** No distance upward or downward. */
-    public val zero: Vertical get() = Vertical(ZERO_BITS)
+    public val zero: VerticalDistance get() = VerticalDistance(ZERO_BITS)
   }
 
   // region internal
@@ -546,18 +550,18 @@ public value class Vertical private constructor(private val bits: Int) {
   companion {
     internal fun up(
       distance: Distance,
-    ): Vertical =
-      Vertical(distance.meters.toFiniteBitsOrThrow())
+    ): VerticalDistance =
+      VerticalDistance(distance.meters.toFiniteBitsOrThrow())
 
     internal fun down(
       distance: Distance,
-    ): Vertical =
-      Vertical((-distance.meters).toFiniteBitsOrThrow())
+    ): VerticalDistance =
+      VerticalDistance((-distance.meters).toFiniteBitsOrThrow())
 
     internal fun fromUpMeters(
       meters: Float,
-    ): Vertical =
-      Vertical(meters.toFiniteBitsOrThrow())
+    ): VerticalDistance =
+      VerticalDistance(meters.toFiniteBitsOrThrow())
   }
 
   // endregion
