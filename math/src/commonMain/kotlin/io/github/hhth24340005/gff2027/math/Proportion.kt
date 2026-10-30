@@ -17,6 +17,25 @@ public value class Proportion private constructor(private val bits: Int) :
     /** 1 minus this, which is exact. */
     public val complement: Proportion get() = Proportion(complementBits(bits))
 
+    /** This part of the width from the left edge. */
+    public val fromLeft: HorizontalProportion get() =
+      HorizontalProportion(
+        this,
+      )
+
+    /** This part of the width from the right edge. */
+    public val fromRight: HorizontalProportion
+      get() = HorizontalProportion(complement)
+
+    /** This part of the height from the bottom edge. */
+    public val fromBottom: VerticalProportion get() = VerticalProportion(this)
+
+    /** This part of the height from the top edge. */
+    public val fromTop: VerticalProportion get() =
+      VerticalProportion(
+        complement,
+      )
+
     public operator fun times(
       other: Proportion,
     ): Proportion =
@@ -95,8 +114,69 @@ public value class Proportion private constructor(private val bits: Int) :
     internal fun toDouble(): Double =
       proportionToDouble(bits)
 
+    internal val unormBits: Int get() = bits
+
+    companion {
+      internal fun fromUnormBits(
+        bits: Int,
+      ): Proportion =
+        Proportion(bits)
+    }
+
     // endregion
   }
+
+/** A part of the width, such as `25.percent.fromRight`. */
+@JvmInline
+public value class HorizontalProportion internal constructor(
+  /** The part of the width from the left edge. */
+  public val fromLeft: Proportion,
+) {
+  /** The part of the width from the right edge. */
+  public val fromRight: Proportion get() = fromLeft.complement
+
+  /** Returns the part from the left edge, such as `→ 25.0%`. */
+  override fun toString(): String =
+    toString(precision = 1)
+
+  /**
+   * Returns the part from the left edge with [precision] decimal places,
+   * such as `→ 25%`.
+   *
+   * @throws IllegalArgumentException if [precision] is negative.
+   */
+  public fun toString(
+    @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+    precision: Int,
+  ): String =
+    "→ ${fromLeft.toString(precision = precision)}"
+}
+
+/** A part of the height, such as `25.percent.fromTop`. */
+@JvmInline
+public value class VerticalProportion internal constructor(
+  /** The part of the height from the bottom edge. */
+  public val fromBottom: Proportion,
+) {
+  /** The part of the height from the top edge. */
+  public val fromTop: Proportion get() = fromBottom.complement
+
+  /** Returns the part from the bottom edge, such as `↑ 25.0%`. */
+  override fun toString(): String =
+    toString(precision = 1)
+
+  /**
+   * Returns the part from the bottom edge with [precision] decimal places,
+   * such as `↑ 25%`.
+   *
+   * @throws IllegalArgumentException if [precision] is negative.
+   */
+  public fun toString(
+    @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+    precision: Int,
+  ): String =
+    "↑ ${fromBottom.toString(precision = precision)}"
+}
 
 // region extension constructors
 
