@@ -16,6 +16,7 @@ gradle.lifecycle.beforeProject {
 }
 
 include(":app")
+include(":engine2d")
 include(":game")
 include(":healthcheck")
 include(":math")
