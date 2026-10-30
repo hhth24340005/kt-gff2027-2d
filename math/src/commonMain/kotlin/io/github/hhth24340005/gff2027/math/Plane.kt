@@ -9,11 +9,11 @@ package io.github.hhth24340005.gff2027.math
 public value class Displacement2 private constructor(
   private val packed: Long,
 ) {
-  public val horizontal: Horizontal
-    get() = Horizontal.fromRightMeters(unpackHigh(packed))
+  public val horizontal: HorizontalDistance
+    get() = HorizontalDistance.fromRightMeters(unpackHigh(packed))
 
-  public val vertical: Vertical
-    get() = Vertical.fromUpMeters(unpackLow(packed))
+  public val vertical: VerticalDistance
+    get() = VerticalDistance.fromUpMeters(unpackLow(packed))
 
   /** @throws ArithmeticException if the sum is beyond the Float range. */
   public operator fun plus(
@@ -32,7 +32,7 @@ public value class Displacement2 private constructor(
 
   /** @throws ArithmeticException if the sum is beyond the Float range. */
   public operator fun plus(
-    other: Horizontal,
+    other: HorizontalDistance,
   ): Displacement2 =
     Displacement2(horizontal + other, vertical)
 
@@ -41,13 +41,13 @@ public value class Displacement2 private constructor(
    *   range.
    */
   public operator fun minus(
-    other: Horizontal,
+    other: HorizontalDistance,
   ): Displacement2 =
     Displacement2(horizontal - other, vertical)
 
   /** @throws ArithmeticException if the sum is beyond the Float range. */
   public operator fun plus(
-    other: Vertical,
+    other: VerticalDistance,
   ): Displacement2 =
     Displacement2(horizontal, vertical + other)
 
@@ -56,7 +56,7 @@ public value class Displacement2 private constructor(
    *   range.
    */
   public operator fun minus(
-    other: Vertical,
+    other: VerticalDistance,
   ): Displacement2 =
     Displacement2(horizontal, vertical - other)
 
@@ -171,14 +171,14 @@ public value class Displacement2 private constructor(
   companion {
     /** No move. */
     public val zero: Displacement2
-      get() = Displacement2(Horizontal.zero, Vertical.zero)
+      get() = Displacement2(HorizontalDistance.zero, VerticalDistance.zero)
   }
 
   // region internal
 
   internal constructor(
-    horizontal: Horizontal,
-    vertical: Vertical,
+    horizontal: HorizontalDistance,
+    vertical: VerticalDistance,
   ) : this(pack(horizontal.rightMeters, vertical.upMeters))
 
   // endregion
@@ -208,25 +208,25 @@ public value class Position2 private constructor(
 
   /** @throws ArithmeticException if the result is beyond the Float range. */
   public operator fun plus(
-    other: Horizontal,
+    other: HorizontalDistance,
   ): Position2 =
     Position2(fromOrigin + other)
 
   /** @throws ArithmeticException if the result is beyond the Float range. */
   public operator fun minus(
-    other: Horizontal,
+    other: HorizontalDistance,
   ): Position2 =
     Position2(fromOrigin - other)
 
   /** @throws ArithmeticException if the result is beyond the Float range. */
   public operator fun plus(
-    other: Vertical,
+    other: VerticalDistance,
   ): Position2 =
     Position2(fromOrigin + other)
 
   /** @throws ArithmeticException if the result is beyond the Float range. */
   public operator fun minus(
-    other: Vertical,
+    other: VerticalDistance,
   ): Position2 =
     Position2(fromOrigin - other)
 
@@ -269,8 +269,8 @@ public value class Position2 private constructor(
 // region internal
 
 private fun displacementString(
-  horizontal: Horizontal,
-  vertical: Vertical,
+  horizontal: HorizontalDistance,
+  vertical: VerticalDistance,
   precision: Int,
 ): String {
   val h = horizontal.toString(precision = precision)

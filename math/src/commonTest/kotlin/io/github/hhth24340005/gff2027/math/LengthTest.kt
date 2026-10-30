@@ -49,10 +49,10 @@ class LengthTest :
     }
 
     test("zero is the same toward either side") {
-      0.meters.left shouldBe Horizontal.zero
-      0.meters.right shouldBe Horizontal.zero
-      0.meters.down shouldBe Vertical.zero
-      0.meters.up shouldBe Vertical.zero
+      0.meters.left shouldBe HorizontalDistance.zero
+      0.meters.right shouldBe HorizontalDistance.zero
+      0.meters.down shouldBe VerticalDistance.zero
+      0.meters.up shouldBe VerticalDistance.zero
     }
 
     test("plus and minus add along the axis") {
