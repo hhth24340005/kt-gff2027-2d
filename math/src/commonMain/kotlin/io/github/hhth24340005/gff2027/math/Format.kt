@@ -1,3 +1,15 @@
+// Low-level number formatting that rarely changes, so its long functions
+// are left as they are
+@file:Suppress(
+  "CognitiveComplexMethod",
+  "CollapsibleIfStatements",
+  "CyclomaticComplexMethod",
+  "DocumentationOverPrivateFunction",
+  "LongMethod",
+  "ReturnCount",
+  "UnnecessaryParentheses",
+)
+
 package io.github.hhth24340005.gff2027.math
 
 /**
