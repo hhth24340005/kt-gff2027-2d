@@ -1,4 +1,37 @@
-# A game for GFF AWARD 2027
+# (TODO: The title for game)
+
+<img align="left" width="450" alt="Game screenshot" src="https://github.com/user-attachments/assets/69c6f344-d4a0-43b8-854c-f924147dca3a" />
+
+<img align="left" width="450" alt="Game screenshot" src="https://github.com/user-attachments/assets/69c6f344-d4a0-43b8-854c-f924147dca3a" />
+
+### About this game
+
+MMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMm
+* Line6
+* Line7
+* Line8
+* Line9
+* Line10
+* Line11
+
+---
+
+### Who are you?
+
+MMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMm
+* Line5
+* Line6
+* Line7
+
+<br clear="left">
+
+## About [GFF AWARD 2027](http://fukuoka-game.com/archives/2621/)
+
+<img align="right" width="450" alt="GFF AWARD 2027 Poster" src="https://github.com/user-attachments/assets/b36035ab-d569-484d-bfbc-131101af02b5" />
+
+MMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMmMMMMm
+
+<br clear="right">
 
 ## Installing from source
 
@@ -60,6 +93,7 @@ This command will output the fully bundled application image to `./app/build/jpa
 |-|-|
 | `app/` |  Bundles the game with Java into a standalone application |
 | `game/` | The game logic itself |
+| `engine2d/` | High-level graphics API for 2D games |
 | `wrapper/` | Kotlin-friendly API for FFI |
 | `math/` | Math utilities |
 | `native/webgpu/` |  Downloads the WebGPU library and makes it callable from Java |
@@ -71,3 +105,5 @@ This command will output the fully bundled application image to `./app/build/jpa
 ## [License](LICENSE)
 
 The source code is distributed under the [MIT License](https://opensource.org/license/mit).
+
+The poster image in this document belongs to [福岡ゲーム産業振興機構](http://fukuoka-game.com) and is not covered by this license.
