@@ -27,19 +27,49 @@ public suspend fun Device.createShaderModule(
   )
 
 /**
- * Creates a pipeline that draws triangle lists with one sample per pixel. Its
- * bind group layouts are derived from the shaders, and
- * [RenderPipeline.getBindGroupLayout] returns them.
+ * Creates a layout of [entries] for bind groups. The scope releases it when
+ * it exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createBindGroupLayout(
+  entries: List<BindGroupLayoutEntry>,
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  label: String? = null,
+): BindGroupLayout =
+  scope.install(
+    acquire = { createBindGroupLayoutImpl(entries, label) },
+    release = { layout, _ -> layout.release() },
+  )
+
+/**
+ * Creates a pipeline layout whose bind group `i` follows
+ * `bindGroupLayouts[i]`. The scope releases it when it exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createPipelineLayout(
+  bindGroupLayouts: List<BindGroupLayout>,
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  label: String? = null,
+): PipelineLayout =
+  scope.install(
+    acquire = { createPipelineLayoutImpl(bindGroupLayouts, label) },
+    release = { layout, _ -> layout.release() },
+  )
+
+/**
+ * Creates a pipeline that draws triangle lists with one sample per pixel and
+ * binds resources as [layout] declares. The scope releases it when it exits.
  */
 context(scope: ResourceScope)
 public suspend fun Device.createRenderPipeline(
+  layout: PipelineLayout,
   vertex: VertexState,
   fragment: FragmentState,
   @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
   label: String? = null,
 ): RenderPipeline =
   scope.install(
-    acquire = { createRenderPipelineImpl(vertex, fragment, label) },
+    acquire = { createRenderPipelineImpl(layout, vertex, fragment, label) },
     release = { pipeline, _ -> pipeline.release() },
   )
 
@@ -121,6 +151,22 @@ public suspend fun Device.createCommandEncoder(): CommandEncoder =
     release = { encoder, _ -> encoder.release() },
   )
 
+/**
+ * Creates an encoder that records draws into a [RenderBundle] for render
+ * passes whose color attachments have [colorFormats] in order and one sample
+ * per pixel. The scope releases it when it exits.
+ */
+context(scope: ResourceScope)
+public suspend fun Device.createRenderBundleEncoder(
+  colorFormats: List<TextureFormat>,
+  @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
+  label: String? = null,
+): RenderBundleEncoder =
+  scope.install(
+    acquire = { createRenderBundleEncoderImpl(colorFormats, label) },
+    release = { encoder, _ -> encoder.release() },
+  )
+
 // region internal
 
 internal expect fun Device.createShaderModuleImpl(
@@ -128,7 +174,18 @@ internal expect fun Device.createShaderModuleImpl(
   label: String?,
 ): ShaderModule
 
+internal expect fun Device.createBindGroupLayoutImpl(
+  entries: List<BindGroupLayoutEntry>,
+  label: String?,
+): BindGroupLayout
+
+internal expect fun Device.createPipelineLayoutImpl(
+  bindGroupLayouts: List<BindGroupLayout>,
+  label: String?,
+): PipelineLayout
+
 internal expect fun Device.createRenderPipelineImpl(
+  layout: PipelineLayout,
   vertex: VertexState,
   fragment: FragmentState,
   label: String?,
@@ -158,6 +215,11 @@ internal expect fun Device.createBindGroupImpl(
 ): BindGroup
 
 internal expect fun Device.createCommandEncoderImpl(): CommandEncoder
+
+internal expect fun Device.createRenderBundleEncoderImpl(
+  colorFormats: List<TextureFormat>,
+  label: String?,
+): RenderBundleEncoder
 
 internal expect fun Device.release()
 

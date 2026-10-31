@@ -8,5 +8,5 @@ public class FragmentState(
   public val module: ShaderModule,
   public val targets: List<ColorTargetState>,
   @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
-  public val entryPoint: String,
+  public val entryPoint: FragmentEntryPoint,
 )

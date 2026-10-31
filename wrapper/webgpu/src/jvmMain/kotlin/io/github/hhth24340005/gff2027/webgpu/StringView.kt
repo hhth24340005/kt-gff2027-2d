@@ -17,6 +17,12 @@ internal fun MemorySegment.setStringView(
   WGPUStringView.length(this, WGPU_STRLEN())
 }
 
+// The null value, which differs from the empty string of a zeroed struct
+internal fun MemorySegment.setNullStringView() {
+  WGPUStringView.data(this, NULL)
+  WGPUStringView.length(this, WGPU_STRLEN())
+}
+
 internal fun MemorySegment.stringView(): String {
   val data = WGPUStringView.data(this)
   val length = WGPUStringView.length(this)

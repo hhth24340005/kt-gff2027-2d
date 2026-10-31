@@ -4,5 +4,5 @@ package io.github.hhth24340005.gff2027.webgpu
 public class VertexState(
   public val module: ShaderModule,
   @Suppress("UNUSED_PARAMETER") vararg namedOnly: NamedOnly,
-  public val entryPoint: String,
+  public val entryPoint: VertexEntryPoint,
 )
