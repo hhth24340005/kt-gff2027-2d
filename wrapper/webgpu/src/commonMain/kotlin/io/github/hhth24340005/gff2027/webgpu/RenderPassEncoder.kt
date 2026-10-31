@@ -36,6 +36,15 @@ public fun RenderPassEncoder.setBindGroup(
 ): Unit =
   setBindGroupImpl(index, group)
 
+/**
+ * Replays [bundles] in order. See the WebGPU spec:
+ * https://www.w3.org/TR/webgpu/#dom-gpurenderpassencoder-executebundles
+ */
+public fun RenderPassEncoder.executeBundles(
+  bundles: List<RenderBundle>,
+): Unit =
+  executeBundlesImpl(bundles)
+
 // region internal
 
 @PublishedApi
@@ -55,6 +64,10 @@ internal expect fun RenderPassEncoder.drawImpl(
 internal expect fun RenderPassEncoder.setBindGroupImpl(
   index: Int,
   group: BindGroup,
+)
+
+internal expect fun RenderPassEncoder.executeBundlesImpl(
+  bundles: List<RenderBundle>,
 )
 
 // endregion

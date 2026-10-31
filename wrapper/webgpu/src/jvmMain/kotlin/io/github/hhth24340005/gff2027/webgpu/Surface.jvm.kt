@@ -91,7 +91,7 @@ internal actual fun Surface.configureImpl(
   configured = true
 }
 
-internal actual fun Surface.getCurrentTextureImpl(): Texture? =
+internal actual fun Surface.getCurrentTextureImpl(): CurrentTexture =
   Arena.ofConfined().use { arena ->
     val surfaceTexture = WGPUSurfaceTexture.allocate(arena)
     wgpuSurfaceGetCurrentTexture(handle, surfaceTexture)
@@ -100,13 +100,15 @@ internal actual fun Surface.getCurrentTextureImpl(): Texture? =
       WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal(),
       WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal(),
       -> {
-        Texture(texture)
+        CurrentTexture.Success(Texture(texture))
       }
 
-      WGPUSurfaceGetCurrentTextureStatus_Timeout(),
-      SURFACE_TEXTURE_STATUS_OCCLUDED,
-      -> {
-        null
+      WGPUSurfaceGetCurrentTextureStatus_Timeout() -> {
+        CurrentTexture.Timeout
+      }
+
+      SURFACE_TEXTURE_STATUS_OCCLUDED -> {
+        CurrentTexture.Occluded
       }
 
       WGPUSurfaceGetCurrentTextureStatus_Outdated(),
