@@ -65,6 +65,9 @@ public value class Distance private constructor(private val bits: Int) :
     ): Int =
       meters.compareTo(other.meters)
 
+    @RawValueApi
+    public val meters: Float get() = Float.fromBits(bits)
+
     companion {
       /** No distance. */
       public val zero: Distance get() = Distance(ZERO_BITS)
@@ -205,12 +208,6 @@ public value class Distance private constructor(private val bits: Int) :
 
       // endregion
     }
-
-    // region internal
-
-    internal val meters: Float get() = Float.fromBits(bits)
-
-    // endregion
   }
 
 /**
@@ -361,14 +358,15 @@ public value class HorizontalDistance private constructor(
   ): String =
     "→ ${rightMeters.toString(precision = precision)} m"
 
+  @RawValueApi
+  public val rightMeters: Float get() = Float.fromBits(bits)
+
   companion {
     /** No distance to either side. */
     public val zero: HorizontalDistance get() = HorizontalDistance(ZERO_BITS)
   }
 
   // region internal
-
-  internal val rightMeters: Float get() = Float.fromBits(bits)
 
   companion {
     internal fun right(
@@ -538,14 +536,15 @@ public value class VerticalDistance private constructor(
   ): String =
     "↑ ${upMeters.toString(precision = precision)} m"
 
+  @RawValueApi
+  public val upMeters: Float get() = Float.fromBits(bits)
+
   companion {
     /** No distance upward or downward. */
     public val zero: VerticalDistance get() = VerticalDistance(ZERO_BITS)
   }
 
   // region internal
-
-  internal val upMeters: Float get() = Float.fromBits(bits)
 
   companion {
     internal fun up(
