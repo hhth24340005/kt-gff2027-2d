@@ -29,7 +29,7 @@ kotlin {
     commonMain {
       dependencies {
         implementation(libs.kotlin.logging)
-        implementation(project(":wrapper:webgpu"))
+        implementation(project(":engine2d"))
       }
     }
 

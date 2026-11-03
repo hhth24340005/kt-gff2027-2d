@@ -1,7 +1,7 @@
 package io.github.hhth24340005.gff2027.game2d
 
-import io.github.hhth24340005.gff2027.webgpu.Instance
-import io.github.hhth24340005.gff2027.webgpu.createSurface
+import io.github.hhth24340005.gff2027.engine2d.Canvas
+import io.github.hhth24340005.gff2027.engine2d.Image
 import io.github.hhth24340005.gff2027.webgpu.resourceCoroutineScope
 import io.github.hhth24340005.gff2027.window.CloseRequests
 import io.github.hhth24340005.gff2027.window.Window
@@ -10,7 +10,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.imageio.ImageIO
-import kotlin.coroutines.ContinuationInterceptor
 
 public fun main(): Unit =
   runBlocking {
@@ -19,18 +18,11 @@ public fun main(): Unit =
         .createOnCurrentDispatcher(title = "Sprite", size = WIDTH to HEIGHT)
     val closeRequests = CloseRequests()
     window.use(closeRequests) {
-      val mainThread = coroutineContext[ContinuationInterceptor]!!
       val game =
         launch(Dispatchers.Default) {
           resourceCoroutineScope {
-            val instance = Instance()
-            drawSprite(
-              instance,
-              instance.createSurface(window),
-              WIDTH to HEIGHT,
-              mainThread,
-              loadImage(SPRITE_PATH),
-            )
+            val canvas = Canvas(window)
+            drawSprites(canvas, WIDTH to HEIGHT, loadImage(SPRITE_PATH))
           }
         }
       closeRequests.receive()
@@ -46,9 +38,10 @@ private fun loadImage(
   val image =
     ClassLoader.getSystemResourceAsStream(name)?.use { ImageIO.read(it) }
       ?: error("No image resource $name")
+  val size = image.width to image.height
   val argb =
     image.getRGB(0, 0, image.width, image.height, null, 0, image.width)
-  return Image(image.width to image.height, argb)
+  return Image(size, argb)
 }
 
 private const val SPRITE_PATH = "circle.png"
