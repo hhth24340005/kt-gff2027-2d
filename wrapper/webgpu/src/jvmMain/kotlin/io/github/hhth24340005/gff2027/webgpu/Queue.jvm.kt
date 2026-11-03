@@ -36,14 +36,27 @@ internal actual fun Queue.writeBufferImpl(
   buffer: Buffer,
   data: FloatArray,
 ) {
+  writeBufferFrom(buffer, MemorySegment.ofArray(data))
+}
+
+internal actual fun Queue.writeBufferImpl(
+  buffer: Buffer,
+  data: IntArray,
+) {
+  writeBufferFrom(buffer, MemorySegment.ofArray(data))
+}
+
+private fun Queue.writeBufferFrom(
+  buffer: Buffer,
+  data: MemorySegment,
+) {
   Arena.ofConfined().use { arena ->
-    val source = MemorySegment.ofArray(data)
     wgpuQueueWriteBuffer(
       handle,
       buffer.handle,
       0L,
-      arena.allocate(source.byteSize()).copyFrom(source),
-      source.byteSize(),
+      arena.allocate(data.byteSize()).copyFrom(data),
+      data.byteSize(),
     )
   }
 }

@@ -22,6 +22,9 @@ public enum class BindingType {
 
   /** A sampler that may blend texels, as `sampler`. */
   Sampler,
+
+  /** A buffer that shaders only read, as `var<storage, read>`. */
+  ReadOnlyStorage,
 }
 
 // region internal

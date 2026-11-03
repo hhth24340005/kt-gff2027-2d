@@ -20,6 +20,17 @@ public fun Queue.writeBuffer(
   writeBufferImpl(buffer, data)
 
 /**
+ * Copies [data] into [buffer] from its start. Each element lies in the
+ * platform's byte order, which is little-endian on every supported platform,
+ * as WGSL reads it.
+ */
+public fun Queue.writeBuffer(
+  buffer: Buffer,
+  data: IntArray,
+): Unit =
+  writeBufferImpl(buffer, data)
+
+/**
  * Copies [data] into the whole [texture], whose rows each start
  * [elementsPerRow] elements after the previous one, top row first. Each
  * element lies in the platform's byte order, which is little-endian on every
@@ -43,6 +54,11 @@ internal expect fun Queue.submitImpl(
 internal expect fun Queue.writeBufferImpl(
   buffer: Buffer,
   data: FloatArray,
+)
+
+internal expect fun Queue.writeBufferImpl(
+  buffer: Buffer,
+  data: IntArray,
 )
 
 internal expect fun Queue.writeTextureImpl(
