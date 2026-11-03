@@ -1,5 +1,7 @@
 package io.github.hhth24340005.gff2027.math
 
+import kotlin.jvm.JvmInline
+
 /**
  * A point in the unit square, such as
  * `Proportion2(25.percent.fromLeft, 10.percent.fromTop)`.

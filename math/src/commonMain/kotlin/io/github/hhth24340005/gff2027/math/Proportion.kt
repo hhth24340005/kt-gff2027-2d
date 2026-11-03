@@ -1,5 +1,6 @@
 package io.github.hhth24340005.gff2027.math
 
+import kotlin.jvm.JvmInline
 import kotlin.math.roundToLong
 
 /**

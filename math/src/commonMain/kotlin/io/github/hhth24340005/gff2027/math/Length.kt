@@ -1,5 +1,7 @@
 package io.github.hhth24340005.gff2027.math
 
+import kotlin.jvm.JvmInline
+
 /**
  * A non-negative distance in meters.
  *

@@ -1,5 +1,7 @@
 package io.github.hhth24340005.gff2027.math
 
+import kotlin.jvm.JvmInline
+
 /**
  * A move on the plane, such as `3.meters.right + 1.meters.down`.
  *
