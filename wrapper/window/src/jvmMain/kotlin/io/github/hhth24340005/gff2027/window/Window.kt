@@ -64,7 +64,8 @@ import kotlin.time.Duration.Companion.seconds
 
 public sealed class Window(
   @PublishedApi internal val sdlWindow: Long,
-  @PublishedApi internal val mainDispatcher: CoroutineDispatcher,
+  /** Runs on SDL's main thread, the only one that may change this window. */
+  public val mainDispatcher: CoroutineDispatcher,
   /**
    * Width to height in pixels, which a surface on this window should match.
    * It stays as created, as the window cannot be resized.
