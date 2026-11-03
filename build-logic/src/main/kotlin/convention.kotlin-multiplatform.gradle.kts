@@ -13,6 +13,7 @@ kotlin {
     "-Xcompanion-blocks-and-extensions",
     "-Xconsistent-data-class-copy-visibility",
     "-Xexpect-actual-classes",
+    "-Xcontext-sensitive-resolution",
   )
   compilerOptions.optIn.add("kotlin.contracts.ExperimentalContracts")
   jvm()
