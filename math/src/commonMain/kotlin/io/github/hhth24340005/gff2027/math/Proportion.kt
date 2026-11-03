@@ -92,6 +92,10 @@ public value class Proportion private constructor(private val bits: Int) :
     ): String =
       "${(toDouble() * PERCENT).toString(precision = precision)}%"
 
+    /** This proportion as a rate in [0, 1]. */
+    @RawValueApi
+    public val rate: Float get() = toDouble().toFloat()
+
     companion {
       /** None of the whole. */
       public val zero: Proportion get() = Proportion(ZERO_ALL_BITS)
