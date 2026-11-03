@@ -17,9 +17,13 @@ kotlin {
     commonMain {
       dependencies {
         api(project(":math"))
-        api(project(":wrapper:window"))
         api(libs.arrow.fx.coroutines)
         implementation(project(":wrapper:webgpu"))
+      }
+    }
+    jvmMain {
+      dependencies {
+        api(project(":wrapper:window"))
       }
     }
   }

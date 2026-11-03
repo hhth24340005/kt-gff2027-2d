@@ -10,7 +10,6 @@ import io.github.hhth24340005.gff2027.webgpu.Color
 import io.github.hhth24340005.gff2027.webgpu.CurrentTexture
 import io.github.hhth24340005.gff2027.webgpu.Device
 import io.github.hhth24340005.gff2027.webgpu.FilterMode
-import io.github.hhth24340005.gff2027.webgpu.Instance
 import io.github.hhth24340005.gff2027.webgpu.LoadOp
 import io.github.hhth24340005.gff2027.webgpu.RenderBundle
 import io.github.hhth24340005.gff2027.webgpu.RenderPassColorAttachment
@@ -19,13 +18,11 @@ import io.github.hhth24340005.gff2027.webgpu.Surface
 import io.github.hhth24340005.gff2027.webgpu.Texture
 import io.github.hhth24340005.gff2027.webgpu.TextureFormat
 import io.github.hhth24340005.gff2027.webgpu.TextureView
-import io.github.hhth24340005.gff2027.webgpu.configure
 import io.github.hhth24340005.gff2027.webgpu.createBindGroup
 import io.github.hhth24340005.gff2027.webgpu.createBuffer
 import io.github.hhth24340005.gff2027.webgpu.createCommandEncoder
 import io.github.hhth24340005.gff2027.webgpu.createRenderBundleEncoder
 import io.github.hhth24340005.gff2027.webgpu.createSampler
-import io.github.hhth24340005.gff2027.webgpu.createSurface
 import io.github.hhth24340005.gff2027.webgpu.createTexture
 import io.github.hhth24340005.gff2027.webgpu.createView
 import io.github.hhth24340005.gff2027.webgpu.draw
@@ -36,19 +33,16 @@ import io.github.hhth24340005.gff2027.webgpu.getCurrentTexture
 import io.github.hhth24340005.gff2027.webgpu.present
 import io.github.hhth24340005.gff2027.webgpu.reference
 import io.github.hhth24340005.gff2027.webgpu.renderPass
-import io.github.hhth24340005.gff2027.webgpu.requestAdapter
-import io.github.hhth24340005.gff2027.webgpu.requestDevice
 import io.github.hhth24340005.gff2027.webgpu.setBindGroup
 import io.github.hhth24340005.gff2027.webgpu.setPipeline
 import io.github.hhth24340005.gff2027.webgpu.submit
-import io.github.hhth24340005.gff2027.webgpu.supportedFormats
 import io.github.hhth24340005.gff2027.webgpu.writeBuffer
 import io.github.hhth24340005.gff2027.webgpu.writeTexture
-import io.github.hhth24340005.gff2027.window.Window
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filter
@@ -59,21 +53,11 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * Creates a canvas that draws to [window]. The scope releases the canvas and
- * every GPU object it made when it exits.
- */
-context(scope: ResourceScope)
-public suspend fun Canvas(
-  window: Window,
-): Canvas =
-  Canvas.createImpl(window)
-
-/**
- * Draws to a window with its own GPU device. Only its drawing thread uses
+ * Draws to a surface with its own GPU device. Only its drawing thread uses
  * the device, apart from its [compiler].
  */
 public class Canvas internal constructor(
-  internal val window: Window,
+  internal val exposures: Flow<Unit>,
   internal val surface: Surface,
   internal val device: Device,
   internal val format: TextureFormat,
@@ -99,42 +83,17 @@ public class Canvas internal constructor(
 
   /**
    * Draws [layers] in order whenever the list, a resource of its layers, or
-   * the window's exposure changes, and keeps the frame on the window until the
-   * next change. Runs until canceled.
+   * the surface's exposure changes, and keeps the frame on the surface until
+   * the next change. Runs until canceled.
    */
-  public suspend fun renderRenderForever(
+  public suspend fun runRenderForever(
     layers: StateFlow<List<Layer<ColorFormat.Canvas>>>,
   ): Nothing =
     runRenderImpl(layers)
 
   // region internal
 
-  companion {
-    context(scope: ResourceScope)
-    internal suspend fun createImpl(
-      window: Window,
-    ): Canvas {
-      val instance = Instance()
-      val surface = instance.createSurface(window)
-      val adapter =
-        instance.requestAdapter(surface)
-          ?: error("No GPU adapter is available")
-      val device = adapter.requestDevice()
-      val format =
-        surface.supportedFormats(adapter).firstOrNull()
-          ?: error("The surface supports no format")
-      withContext(window.mainDispatcher) {
-        surface.configure(device, format, size = window.pixelSize)
-      }
-      val canvas = Canvas(window, surface, device, format)
-      // The scope releases in reverse order, so this runs before the device's
-      // release
-      scope.onRelease { canvas.releaseAll() }
-      return canvas
-    }
-  }
-
-  private suspend fun releaseAll() {
+  internal suspend fun releaseAll() {
     layerBundles.values.forEach { it.release() }
     layerBundles.clear()
     uploads.values.forEach { it.gpu.release() }
@@ -162,7 +121,7 @@ public class Canvas internal constructor(
             .map { flow -> flow.filter { uploads[flow]?.value !== it } }
             .merge()
         }
-      merge(layers, resourceChanges, window.exposures)
+      merge(layers, resourceChanges, exposures)
         .conflate()
         .collect { draw(layers.value) }
       awaitCancellation()
