@@ -15,6 +15,12 @@ internal class Allocated<out T>(
   suspend fun release() {
     releaseImpl(ExitCase.Completed)
   }
+
+  /** [transform] of [value], whose [release] replaces this one's. */
+  fun <R> map(
+    transform: (T) -> R,
+  ): Allocated<R> =
+    Allocated(transform(value), releaseImpl)
 }
 
 /** Acquires what [acquire] installs, to release with [Allocated.release]. */
