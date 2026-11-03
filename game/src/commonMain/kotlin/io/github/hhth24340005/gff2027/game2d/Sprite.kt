@@ -1,216 +1,148 @@
 package io.github.hhth24340005.gff2027.game2d
 
-import arrow.fx.coroutines.ResourceScope
-import io.github.hhth24340005.gff2027.webgpu.BindGroup
-import io.github.hhth24340005.gff2027.webgpu.BindGroupEntry
-import io.github.hhth24340005.gff2027.webgpu.Buffer
-import io.github.hhth24340005.gff2027.webgpu.Color
-import io.github.hhth24340005.gff2027.webgpu.ColorTargetState
-import io.github.hhth24340005.gff2027.webgpu.Device
-import io.github.hhth24340005.gff2027.webgpu.FragmentState
-import io.github.hhth24340005.gff2027.webgpu.Instance
-import io.github.hhth24340005.gff2027.webgpu.LoadOp
-import io.github.hhth24340005.gff2027.webgpu.RenderPassColorAttachment
-import io.github.hhth24340005.gff2027.webgpu.RenderPipeline
-import io.github.hhth24340005.gff2027.webgpu.Surface
-import io.github.hhth24340005.gff2027.webgpu.TextureFormat
-import io.github.hhth24340005.gff2027.webgpu.VertexState
-import io.github.hhth24340005.gff2027.webgpu.configure
-import io.github.hhth24340005.gff2027.webgpu.createBindGroup
-import io.github.hhth24340005.gff2027.webgpu.createBuffer
-import io.github.hhth24340005.gff2027.webgpu.createCommandEncoder
-import io.github.hhth24340005.gff2027.webgpu.createRenderPipeline
-import io.github.hhth24340005.gff2027.webgpu.createSampler
-import io.github.hhth24340005.gff2027.webgpu.createShaderModule
-import io.github.hhth24340005.gff2027.webgpu.createTexture
-import io.github.hhth24340005.gff2027.webgpu.createView
-import io.github.hhth24340005.gff2027.webgpu.draw
-import io.github.hhth24340005.gff2027.webgpu.finish
-import io.github.hhth24340005.gff2027.webgpu.getBindGroupLayout
-import io.github.hhth24340005.gff2027.webgpu.getCurrentTexture
-import io.github.hhth24340005.gff2027.webgpu.present
-import io.github.hhth24340005.gff2027.webgpu.renderPass
-import io.github.hhth24340005.gff2027.webgpu.requestAdapter
-import io.github.hhth24340005.gff2027.webgpu.requestDevice
-import io.github.hhth24340005.gff2027.webgpu.resourceCoroutineScope
-import io.github.hhth24340005.gff2027.webgpu.setBindGroup
-import io.github.hhth24340005.gff2027.webgpu.setPipeline
-import io.github.hhth24340005.gff2027.webgpu.submit
-import io.github.hhth24340005.gff2027.webgpu.supportedFormats
-import io.github.hhth24340005.gff2027.webgpu.writeBuffer
-import io.github.hhth24340005.gff2027.webgpu.writeTexture
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.time.Duration.Companion.seconds
-
-/** An image whose texels are ARGB ints in sRGB, top row first. */
-internal class Image(
-  val size: Pair<Int, Int>,
-  val argb: IntArray,
-)
+import io.github.hhth24340005.gff2027.engine2d.Canvas
+import io.github.hhth24340005.gff2027.engine2d.Image
+import io.github.hhth24340005.gff2027.engine2d.Layer
+import io.github.hhth24340005.gff2027.engine2d.Pipeline
+import io.github.hhth24340005.gff2027.engine2d.VertexCount
+import io.github.hhth24340005.gff2027.engine2d.WgslStruct
+import io.github.hhth24340005.gff2027.engine2d.WgslStructWriter
+import io.github.hhth24340005.gff2027.engine2d.shader
+import io.github.hhth24340005.gff2027.math.Displacement2
+import io.github.hhth24340005.gff2027.math.OriginApi
+import io.github.hhth24340005.gff2027.math.Position2
+import io.github.hhth24340005.gff2027.math.centimeters
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * Draws [image] on [surface] every frame until canceled. Configures [surface]
- * on [mainThread], as some platforms allow changing a window only from its
- * thread.
+ * Draws [image] at a few places on [canvas], whose window has [size] in
+ * screen coordinates, until canceled.
  */
-context(_: ResourceScope)
-internal suspend fun drawSprite(
-  instance: Instance,
-  surface: Surface,
+internal suspend fun drawSprites(
+  canvas: Canvas,
   size: Pair<Int, Int>,
-  mainThread: ContinuationInterceptor,
   image: Image,
 ) {
-  val adapter =
-    instance.requestAdapter(surface) ?: error("No GPU adapter is available")
-  val device = adapter.requestDevice()
-  val format =
-    surface.supportedFormats(adapter).firstOrNull()
-      ?: error("The surface supports no format")
-  withContext(mainThread) {
-    surface.configure(device, format, size = size)
-  }
-  val module = device.createShaderModule(wgsl = SHADER)
-  val pipeline =
-    device.createRenderPipeline(
-      VertexState(module, entryPoint = "vs_main"),
-      FragmentState(
-        module,
-        [ColorTargetState(format)],
-        entryPoint = "fs_main",
-      ),
-    )
-  val bindGroup = spriteBindGroup(device, pipeline, image, size)
-
-  while (true) {
-    resourceCoroutineScope { drawFrame(surface, device, pipeline, bindGroup) }
-    delay(1.seconds / 60)
-  }
+  val pipeline = Pipeline(SPRITE_SHADER)
+  val camera = MutableStateFlow(cameraOver(size))
+  val sprites = MutableStateFlow(spritesOf(image.size))
+  val layer = Layer(pipeline, camera, MutableStateFlow(image), items = sprites)
+  canvas.runRenderForever(MutableStateFlow([layer]))
 }
 
 // region internal
 
-context(_: ResourceScope)
-private suspend fun spriteBindGroup(
-  device: Device,
-  pipeline: RenderPipeline,
-  image: Image,
-  canvasSize: Pair<Int, Int>,
-): BindGroup {
-  val [width, _] = image.size
-  val texture =
-    device.createTexture(
-      size = image.size,
-      // Matches ARGB ints, which lie in memory as B, G, R, A
-      format = TextureFormat.BGRA8UnormSrgb,
-    )
-  device.queue.writeTexture(texture, image.argb, elementsPerRow = width)
-  return device.createBindGroup(
-    pipeline.getBindGroupLayout(0),
-    [
-      BindGroupEntry(0, texture.createView()),
-      BindGroupEntry(1, device.createSampler()),
-      BindGroupEntry(2, centeredPlacement(device, canvasSize, image.size)),
-    ],
+/** The part of the plane the window shows, centered at [center]. */
+private class Camera(
+  val center: Position2,
+  val halfSize: Displacement2,
+) : WgslStruct {
+  override fun writeTo(
+    writer: WgslStructWriter,
+  ) {
+    writer.write(center)
+    writer.write(halfSize)
+  }
+}
+
+/** An image whose bottom-left corner is at [position]. */
+private class Sprite(
+  val position: Position2,
+  val size: Displacement2,
+) : WgslStruct {
+  override fun writeTo(
+    writer: WgslStructWriter,
+  ) {
+    writer.write(position)
+    writer.write(size)
+  }
+}
+
+// A screen coordinate spans a centimeter
+@OptIn(OriginApi::class)
+private fun cameraOver(
+  size: Pair<Int, Int>,
+): Camera {
+  val [width, height] = size
+  return Camera(
+    Position2.origin,
+    (width / 2).centimeters.right + (height / 2).centimeters.up,
   )
 }
 
-context(_: ResourceScope)
-private suspend fun centeredPlacement(
-  device: Device,
-  canvasSize: Pair<Int, Int>,
+// Three sprites in a row, the middle one at the origin
+@OptIn(OriginApi::class)
+private fun spritesOf(
   imageSize: Pair<Int, Int>,
-): Buffer {
-  val [canvasWidth, canvasHeight] = canvasSize
-  val [imageWidth, imageHeight] = imageSize
-  val width = (imageWidth * SCALE).toFloat()
-  val height = (imageHeight * SCALE).toFloat()
-  val placement =
-    floatArrayOf(
-      canvasWidth.toFloat(),
-      canvasHeight.toFloat(),
-      (canvasWidth - width) / 2,
-      (canvasHeight - height) / 2,
-      width,
-      height,
-    )
-  val buffer = device.createBuffer(size = placement.size * Float.SIZE_BYTES)
-  device.queue.writeBuffer(buffer, placement)
-  return buffer
+): List<Sprite> {
+  val [width, height] = imageSize
+  val size =
+    (width * SCALE).centimeters.right + (height * SCALE).centimeters.up
+  val middle = Position2.origin - size / 2
+  val gap = (width * SCALE * 2).centimeters
+  return [
+    Sprite(middle - gap.right, size),
+    Sprite(middle, size),
+    Sprite(middle + gap.right, size),
+  ]
 }
 
-context(_: ResourceScope)
-private suspend fun drawFrame(
-  surface: Surface,
-  device: Device,
-  pipeline: RenderPipeline,
-  bindGroup: BindGroup,
-) {
-  val texture = surface.getCurrentTexture() ?: return
-  val view = texture.createView()
-  val encoder = device.createCommandEncoder()
-  encoder.renderPass(
-    [RenderPassColorAttachment(view, LoadOp.Clear(BACKGROUND))],
-  ) {
-    setPipeline(pipeline)
-    setBindGroup(0, bindGroup)
-    draw(vertexCount = 6)
-  }
-  device.queue.submit([encoder.finish()])
-  surface.present()
-}
+private const val SCALE = 8
 
-private val BACKGROUND = Color(red = 0.1, green = 0.1, blue = 0.15)
-
-private const val SCALE = 16
-
-private const val SHADER =
-  """
-  struct Placement {
-    canvas_size: vec2f,
-    // The bottom-left corner in pixels, with y pointing up
-    position: vec2f,
-    size: vec2f,
-  }
-
-  @group(0) @binding(0) var sprite: texture_2d<f32>;
-  @group(0) @binding(1) var sprite_sampler: sampler;
-  @group(0) @binding(2) var<uniform> placement: Placement;
-
-  struct VertexOutput {
-    @builtin(position) position: vec4f,
-    @location(0) uv: vec2f,
-  }
-
-  @vertex
-  fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
-    let corners = array(
-      vec2f(0.0, 0.0), vec2f(1.0, 0.0), vec2f(0.0, 1.0),
-      vec2f(0.0, 1.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0),
-    );
-    let corner = corners[i];
-    let pixel = placement.position + corner * placement.size;
-    let position = normalize_to_clip(pixel, placement.canvas_size);
-    // uv points y down, as images list their rows top first
-    let uv = vec2f(corner.x, 1.0 - corner.y);
-    return VertexOutput(vec4f(position, 0.0, 1.0), uv);
-  }
-
-  // Normalizes pixel from [0, canvas_size] to [-1, 1]
-  fn normalize_to_clip(pixel: vec2f, canvas_size: vec2f) -> vec2f {
-    return pixel / canvas_size * 2.0 - 1.0;
-  }
-
-  @fragment
-  fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
-    let color = textureSample(sprite, sprite_sampler, uv);
-    if color.a < 0.5 {
-      discard;
+private val SPRITE_SHADER =
+  shader(
+    """
+    struct Camera {
+      center: vec2f,
+      half_size: vec2f,
     }
-    return color;
-  }
-  """.trimIndent()
+
+    struct Sprite {
+      // The bottom-left corner
+      position: vec2f,
+      size: vec2f,
+    }
+
+    @group(0) @binding(0) var<storage, read> camera: Camera;
+    @group(0) @binding(1) var sprite_image: texture_2d<f32>;
+    @group(1) @binding(1) var sprite_sampler: sampler;
+    @group(2) @binding(0) var<storage, read> sprites: array<Sprite>;
+
+    struct VertexOutput {
+      @builtin(position) position: vec4f,
+      @location(0) uv: vec2f,
+    }
+
+    @vertex
+    fn vs_main(
+      @builtin(vertex_index) v: u32,
+      @builtin(instance_index) i: u32,
+    ) -> VertexOutput {
+      let corners = array(
+        vec2f(0.0, 0.0), vec2f(1.0, 0.0), vec2f(0.0, 1.0),
+        vec2f(0.0, 1.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0),
+      );
+      let corner = corners[v];
+      let sprite = sprites[i];
+      let point = sprite.position + corner * sprite.size;
+      let position = (point - camera.center) / camera.half_size;
+      // uv points y down, as images list their rows top first
+      let uv = vec2f(corner.x, 1.0 - corner.y);
+      return VertexOutput(vec4f(position, 0.0, 1.0), uv);
+    }
+
+    @fragment
+    fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
+      let color = textureSample(sprite_image, sprite_sampler, uv);
+      if color.a < 0.5 {
+        discard;
+      }
+      return color;
+    }
+    """.trimIndent(),
+    VertexCount(6),
+    instances = Sprite::class,
+  ).bind<Camera>()
+    .bind<Image>()
 
 // endregion
