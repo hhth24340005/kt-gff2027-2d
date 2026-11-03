@@ -30,7 +30,7 @@ jobs:
       - run: ./gradlew detekt
 
   test:
-    name: test (${{ matrix.os }})
+    name: test (${{ matrix.os }}${{ matrix.xvfb && ', xvfb' || '' }})
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +38,9 @@ jobs:
           - os: ubuntu-latest
             # No display on the Linux runner
             sdl-video-driver: offscreen
+          - os: ubuntu-latest
+            # X11 on a virtual display, with Vulkan on the CPU
+            xvfb: true
           - os: macos-latest
           - os: windows-latest
     runs-on: ${{ matrix.os }}
@@ -50,7 +53,12 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew allTests
+      - if: matrix.xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-vulkan-drivers
+      - if: matrix.xvfb
+        run: xvfb-run -a ./gradlew allTests
+      - if: ${{ !matrix.xvfb }}
+        run: ./gradlew allTests
 
   healthcheck:
     name: healthcheck (${{ matrix.os }})
