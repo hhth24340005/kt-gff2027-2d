@@ -2,7 +2,7 @@ package io.github.hhth24340005.gff2027.game2d
 
 import io.github.hhth24340005.gff2027.engine2d.Canvas
 import io.github.hhth24340005.gff2027.engine2d.Image
-import io.github.hhth24340005.gff2027.webgpu.resourceCoroutineScope
+import io.github.hhth24340005.gff2027.engine2d.resourceCoroutineScope
 import io.github.hhth24340005.gff2027.window.CloseRequests
 import io.github.hhth24340005.gff2027.window.Window
 import kotlinx.coroutines.Dispatchers
