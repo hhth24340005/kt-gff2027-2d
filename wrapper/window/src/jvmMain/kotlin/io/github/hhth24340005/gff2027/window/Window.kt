@@ -5,15 +5,20 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.lwjgl.sdl.SDLError.SDL_GetError
 import org.lwjgl.sdl.SDLEvents.SDL_EVENT_QUIT
 import org.lwjgl.sdl.SDLEvents.SDL_EVENT_WINDOW_CLOSE_REQUESTED
+import org.lwjgl.sdl.SDLEvents.SDL_EVENT_WINDOW_EXPOSED
 import org.lwjgl.sdl.SDLEvents.SDL_PollEvent
 import org.lwjgl.sdl.SDLInit.SDL_INIT_VIDEO
 import org.lwjgl.sdl.SDLInit.SDL_InitSubSystem
@@ -34,6 +39,7 @@ import org.lwjgl.sdl.SDLVideo.SDL_DestroyWindow
 import org.lwjgl.sdl.SDLVideo.SDL_GetCurrentVideoDriver
 import org.lwjgl.sdl.SDLVideo.SDL_GetWindowID
 import org.lwjgl.sdl.SDLVideo.SDL_GetWindowProperties
+import org.lwjgl.sdl.SDLVideo.SDL_GetWindowSizeInPixels
 import org.lwjgl.sdl.SDLVideo.SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN
 import org.lwjgl.sdl.SDLVideo.SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER
 import org.lwjgl.sdl.SDLVideo.SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER
@@ -48,6 +54,7 @@ import org.lwjgl.sdl.SDLVideo.SDL_PROP_WINDOW_X11_WINDOW_NUMBER
 import org.lwjgl.sdl.SDLVideo.SDL_WINDOW_METAL
 import org.lwjgl.sdl.SDL_Event
 import org.lwjgl.system.JNI
+import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.Platform
 import org.lwjgl.system.macosx.LibSystem
 import java.util.concurrent.atomic.AtomicBoolean
@@ -58,8 +65,26 @@ import kotlin.time.Duration.Companion.seconds
 public sealed class Window(
   @PublishedApi internal val sdlWindow: Long,
   @PublishedApi internal val mainDispatcher: CoroutineDispatcher,
+  /**
+   * Width to height in pixels, which a surface on this window should match.
+   * It stays as created, as the window cannot be resized.
+   */
+  public val pixelSize: Pair<Int, Int>,
 ) {
   @PublishedApi internal val used: AtomicBoolean = AtomicBoolean(false)
+
+  internal val exposuresSource: MutableSharedFlow<Unit> =
+    MutableSharedFlow(
+      extraBufferCapacity = 1,
+      onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+  /**
+   * Emits when the system needs this window redrawn, such as after it is
+   * uncovered, while it is in [use]. Collectors that fall behind see only
+   * the latest.
+   */
+  public val exposures: SharedFlow<Unit> = exposuresSource.asSharedFlow()
 
   companion {
     /**
@@ -130,37 +155,41 @@ public sealed class Window(
   public class Cocoa internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    pixelSize: Pair<Int, Int>,
     @PublishedApi internal val metalView: Long,
     /** Native type: `CAMetalLayer*`. */
     public val metalLayer: Long,
-  ) : Window(sdlWindow, mainDispatcher)
+  ) : Window(sdlWindow, mainDispatcher, pixelSize)
 
   public class Win32 internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    pixelSize: Pair<Int, Int>,
     /** Native type: `HWND`. */
     public val hwnd: Long,
     /** Native type: `HINSTANCE`. */
     public val hinstance: Long,
-  ) : Window(sdlWindow, mainDispatcher)
+  ) : Window(sdlWindow, mainDispatcher, pixelSize)
 
   public class X11 internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    pixelSize: Pair<Int, Int>,
     /** Native type: `Display*`. */
     public val display: Long,
     /** Native type: Xlib `Window`, an ID rather than a pointer. */
     public val window: Long,
-  ) : Window(sdlWindow, mainDispatcher)
+  ) : Window(sdlWindow, mainDispatcher, pixelSize)
 
   public class Wayland internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
+    pixelSize: Pair<Int, Int>,
     /** Native type: `wl_display*`. */
     public val display: Long,
     /** Native type: `wl_surface*`. */
     public val surface: Long,
-  ) : Window(sdlWindow, mainDispatcher)
+  ) : Window(sdlWindow, mainDispatcher, pixelSize)
 
   /**
    * A window from SDL's `offscreen` driver, chosen with the environment
@@ -169,7 +198,8 @@ public sealed class Window(
   public class Offscreen internal constructor(
     sdlWindow: Long,
     mainDispatcher: CoroutineDispatcher,
-  ) : Window(sdlWindow, mainDispatcher)
+    pixelSize: Pair<Int, Int>,
+  ) : Window(sdlWindow, mainDispatcher, pixelSize)
 
   // region internal
 
@@ -222,6 +252,7 @@ internal object SdlEvents {
   // a close request channel conflates repeated events anyway
   val pendingEvents = mutableMapOf<Int, MutableSet<Int>>()
   val closeRequests = mutableMapOf<Int, SendChannel<Unit>>()
+  val exposures = mutableMapOf<Int, MutableSharedFlow<Unit>>()
 
   suspend inline fun <R> usePoller(
     window: Window,
@@ -250,6 +281,7 @@ internal object SdlEvents {
       withContext(window.mainDispatcher + NonCancellable) {
         pollJob.cancelAndJoin()
         closeRequests -= windowId
+        exposures -= windowId
       }
     }
   }
@@ -274,6 +306,7 @@ internal object SdlEvents {
           closeRequest.channel.deliver(type)
         }
         closeRequests += windowId to closeRequest.channel
+        exposures += windowId to window.exposuresSource
         windowId.also { registered = it }
       }
     } catch (e: CancellationException) {
@@ -281,6 +314,7 @@ internal object SdlEvents {
       registered?.let {
         withContext(window.mainDispatcher + NonCancellable) {
           closeRequests -= it
+          exposures -= it
         }
       }
       throw e
@@ -296,6 +330,11 @@ internal object SdlEvents {
 
       SDL_EVENT_QUIT -> {
         (closeRequests.keys + pendingEvents.keys).forEach { route(it, type) }
+      }
+
+      // A window not yet used has nobody to redraw it, so it drops them
+      SDL_EVENT_WINDOW_EXPOSED -> {
+        exposures[this.window().windowID()]?.tryEmit(Unit)
       }
 
       else -> {}
@@ -457,17 +496,25 @@ private fun wrapSdlWindow(
   mainDispatcher: CoroutineDispatcher,
 ): Window {
   val props = SDL_GetWindowProperties(window)
+  val pixelSize = pixelSizeOf(window)
   return when (driver) {
     "cocoa" -> {
       val view = SDL_Metal_CreateView(window)
       check(view != 0L) { "SDL_Metal_CreateView failed: ${SDL_GetError()}" }
-      Window.Cocoa(window, mainDispatcher, view, SDL_Metal_GetLayer(view))
+      Window.Cocoa(
+        window,
+        mainDispatcher,
+        pixelSize,
+        view,
+        SDL_Metal_GetLayer(view),
+      )
     }
 
     "windows" -> {
       Window.Win32(
         window,
         mainDispatcher,
+        pixelSize,
         props.pointer(SDL_PROP_WINDOW_WIN32_HWND_POINTER),
         props.pointer(SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER),
       )
@@ -477,6 +524,7 @@ private fun wrapSdlWindow(
       Window.X11(
         window,
         mainDispatcher,
+        pixelSize,
         props.pointer(SDL_PROP_WINDOW_X11_DISPLAY_POINTER),
         props.number(SDL_PROP_WINDOW_X11_WINDOW_NUMBER),
       )
@@ -486,13 +534,14 @@ private fun wrapSdlWindow(
       Window.Wayland(
         window,
         mainDispatcher,
+        pixelSize,
         props.pointer(SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER),
         props.pointer(SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER),
       )
     }
 
     "offscreen" -> {
-      Window.Offscreen(window, mainDispatcher)
+      Window.Offscreen(window, mainDispatcher, pixelSize)
     }
 
     else -> {
@@ -500,6 +549,18 @@ private fun wrapSdlWindow(
     }
   }
 }
+
+private fun pixelSizeOf(
+  window: Long,
+): Pair<Int, Int> =
+  MemoryStack.stackPush().use { stack ->
+    val width = stack.mallocInt(1)
+    val height = stack.mallocInt(1)
+    check(SDL_GetWindowSizeInPixels(window, width, height)) {
+      "SDL_GetWindowSizeInPixels failed: ${SDL_GetError()}"
+    }
+    width[0] to height[0]
+  }
 
 private fun Int.pointer(
   name: String,
