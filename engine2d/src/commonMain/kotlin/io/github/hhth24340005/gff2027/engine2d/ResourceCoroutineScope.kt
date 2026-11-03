@@ -1,4 +1,4 @@
-package io.github.hhth24340005.gff2027.webgpu
+package io.github.hhth24340005.gff2027.engine2d
 
 import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.resourceScope
