@@ -1,6 +1,7 @@
 package io.github.hhth24340005.gff2027.webgpu
 
 import wgpu_native.webgpu_h.wgpuRenderBundleEncoderDraw
+import wgpu_native.webgpu_h.wgpuRenderBundleEncoderDrawIndirect
 import wgpu_native.webgpu_h.wgpuRenderBundleEncoderFinish
 import wgpu_native.webgpu_h.wgpuRenderBundleEncoderRelease
 import wgpu_native.webgpu_h.wgpuRenderBundleEncoderSetBindGroup
@@ -40,6 +41,13 @@ internal actual fun RenderBundleEncoder.drawImpl(
     firstVertex,
     firstInstance,
   )
+}
+
+internal actual fun RenderBundleEncoder.drawIndirectImpl(
+  buffer: Buffer,
+  offset: Int,
+) {
+  wgpuRenderBundleEncoderDrawIndirect(handle, buffer.handle, offset.toLong())
 }
 
 internal actual fun RenderBundleEncoder.finishImpl(): RenderBundle =

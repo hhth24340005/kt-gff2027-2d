@@ -42,6 +42,18 @@ public fun RenderBundleEncoder.draw(
   drawImpl(vertexCount, instanceCount, firstVertex, firstInstance)
 
 /**
+ * Draws primitives with the current pipeline, reading `vertexCount`,
+ * `instanceCount`, `firstVertex` and `firstInstance` as four u32 from
+ * [buffer] at [offset] bytes when the GPU runs the draw. See the WebGPU spec:
+ * https://www.w3.org/TR/webgpu/#dom-gpurendercommandsmixin-drawindirect
+ */
+public fun RenderBundleEncoder.drawIndirect(
+  buffer: Buffer,
+  offset: Int = 0,
+): Unit =
+  drawIndirectImpl(buffer, offset)
+
+/**
  * Finishes recording. The encoder cannot record after this. The bundle keeps
  * the pipelines and bind groups it uses alive, so the scopes that created
  * them may exit before it.
@@ -69,6 +81,11 @@ internal expect fun RenderBundleEncoder.drawImpl(
   instanceCount: Int,
   firstVertex: Int,
   firstInstance: Int,
+)
+
+internal expect fun RenderBundleEncoder.drawIndirectImpl(
+  buffer: Buffer,
+  offset: Int,
 )
 
 internal expect fun RenderBundleEncoder.finishImpl(): RenderBundle
