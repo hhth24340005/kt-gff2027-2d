@@ -2,7 +2,7 @@
 
 ## Downloading
 
-Download the application image for your platform from [Releases](https://github.com/hhth24340005/kt-gff2027-2d/releases).
+Download the application image for your platform from [Releases](https://github.com/tmuka2005/kt-gff2027-2d/releases).
 
 macOS blocks the app the first time you open it. To allow it, go to System Settings > Privacy & Security and choose Open Anyway.
 
@@ -27,10 +27,10 @@ macOS blocks the app the first time you open it. To allow it, go to System Setti
    sudo apt install openjdk-25-jdk
    ```
 
-2. Clone the [source](https://github.com/hhth24340005/kt-gff2027-2d) with git:
+2. Clone the [source](https://github.com/tmuka2005/kt-gff2027-2d) with git:
 
    ```bash
-   git clone https://github.com/hhth24340005/kt-gff2027-2d.git
+   git clone https://github.com/tmuka2005/kt-gff2027-2d.git
    cd kt-gff2027-2d
    ```
 
