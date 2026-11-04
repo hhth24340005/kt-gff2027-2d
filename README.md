@@ -1,5 +1,11 @@
 # A game for GFF AWARD 2027
 
+## Downloading
+
+Download the application image for your platform from [Releases](https://github.com/hhth24340005/kt-gff2027-2d/releases).
+
+macOS blocks the app the first time you open it. To allow it, go to System Settings > Privacy & Security and choose Open Anyway.
+
 ## Installing from source
 
 ### Prerequisites

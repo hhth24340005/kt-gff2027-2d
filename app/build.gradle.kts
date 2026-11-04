@@ -44,6 +44,10 @@ abstract class Jpackage : DefaultTask() {
   abstract val appName: Property<String>
 
   @get:Input
+  @get:Optional
+  abstract val appVersion: Property<String>
+
+  @get:Input
   abstract val mainJar: Property<String>
 
   @get:Input
@@ -77,6 +81,7 @@ abstract class Jpackage : DefaultTask() {
         "--dest",
         destination.get().asFile,
       )
+    appVersion.orNull?.let { args.addAll(listOf("--app-version", it)) }
     javaOptions.get().forEach { args.addAll(listOf("--java-options", it)) }
     healthCheckMainClass.orNull?.let {
       val properties = temporaryDir.resolve("HealthCheck.properties")
@@ -100,6 +105,7 @@ tasks.register<Jpackage>("jpackage") {
   description = "Builds the app image with jpackage."
   input.set(layout.dir(jpackageInput.map { it.destinationDir }))
   appName = rootProject.name
+  appVersion = providers.gradleProperty("appVersion")
   mainJar = "game-jvm.jar"
   mainClass = "MainKt"
   javaOptions.addAll(

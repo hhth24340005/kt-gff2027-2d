@@ -1,0 +1,72 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[1-9].[0-9]+"
+      - "v[0-9]+.[1-9][0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ci
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: build (${{ matrix.os }})
+    needs: ci
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: macos-latest
+            platform: macos-arm64
+          - os: windows-latest
+            platform: windows-x64
+    runs-on: ${{ matrix.os }}
+    env:
+      ARCHIVE: kt-gff2027-2d-${{ github.ref_name }}-${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+      - shell: bash
+        run: ./gradlew :app:jpackage "-PappVersion=${GITHUB_REF_NAME#v}"
+      # Keeps the executable bits
+      - if: runner.os == 'Linux'
+        run: tar -czf "$ARCHIVE.tar.gz" -C app/build/jpackage/image kt-gff2027-2d
+      # Keeps the signature of the .app
+      - if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent app/build/jpackage/image/kt-gff2027-2d.app "$ARCHIVE.zip"
+      - if: runner.os == 'Windows'
+        run: Compress-Archive -Path app/build/jpackage/image/kt-gff2027-2d -DestinationPath "$env:ARCHIVE.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: ${{ env.ARCHIVE }}.*
+          if-no-files-found: error
+          # Already compressed
+          compression-level: 0
+
+  release:
+    name: release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
