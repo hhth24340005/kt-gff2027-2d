@@ -107,7 +107,7 @@ tasks.register<Jpackage>("jpackage") {
   appName = rootProject.name
   appVersion = providers.gradleProperty("appVersion")
   mainJar = "game-jvm.jar"
-  mainClass = "MainKt"
+  mainClass = "io.github.hhth24340005.gff2027.game2d.MainKt"
   javaOptions.addAll(
     "--enable-native-access=ALL-UNNAMED",
     "-Djava.library.path=\$APPDIR",
