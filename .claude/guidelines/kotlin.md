@@ -2,13 +2,17 @@
 
 ## Layout
 
-Keep the public API at the top of each file so it reads without IDE tools.
+The API of a file is the declarations that other files use.
 
-* Public declarations call one function and only pass it parameters,
-  properties or getter-like calls. Lambdas they pass follow the same rule.
-  Inline functions delegate to `@PublishedApi internal inline` ones.
+Keep the API at the top of each file so it reads without IDE tools.
+
+* An API declaration has a one-line body, or calls one function and only
+  passes it parameters, properties or getter-like calls. Lambdas it passes
+  follow the same rule.
+  An inline function that delegates does so to a `@PublishedApi internal
+  inline` one.
 * Fields stay at the top of a class regardless of visibility.
-* Put non-public declarations below them, inside a region, in this order:
+* Put the other declarations below them, inside a region, in this order:
   1. `@PublishedApi internal`
   2. `internal`
   3. `private`
